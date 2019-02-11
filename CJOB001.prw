@@ -9,6 +9,8 @@ Teste de execução de 'rotina automática' fora do schedule do Protheus
 @version 1.0
     @example    	
 	"C:\TOTVS 12\ANS\Protheus\bin\smartclient\smartclient.exe" -q -p=U_CJOB001 -c=tcp -e=DEV -m -l
+	
+	\\192.168.0.4\smartclient12_teste\SmartClient.exe -q -p=U_SFACA001 -c=JOBS -e=JOBS -m -l
 /*/
 
 User Function CJOB001()
