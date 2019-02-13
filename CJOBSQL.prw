@@ -4,7 +4,7 @@
     @type  Function
     @author Ademilson Nunes
     @since 11/02/2019
-    @version 1.0.0
+    @version 12.0.0
     /*/
 
 User Function CJOBSQL()
@@ -12,7 +12,7 @@ User Function CJOBSQL()
     Local   cFilia    := '01'
     Local   aTables   := {'SA1'}
     Local   aArea     := GetArea()
-    Private cFileLog  := "LOG"+"\LOG_"+ DTOS(DATE()) +"_"+ STRTRAN(TIME(),":","") +".log"
+    Private cFileLog  := "LOG"+"\CLIENTES.log"
 	Private cLogObj   := FCreate(cFileLog)
 
     RpcSetType(3)	
@@ -38,6 +38,9 @@ User Function CJOBSQL()
 	CLIENTES->(DbCloseArea())
 	RestArea(aArea)	
 
+
+// Exemplo de uso para Windows
+    shellExecute("Open", "%windir%\system32\cmd.exe", " /k notepad c:\TOTVS 12\ANS\protheus_data\log\cliente.log", "c:\TOTVS 12\ANS\protheus_data\log", 1 )    
 	RpcClearEnv()
 
-Return return
+Return
