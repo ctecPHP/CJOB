@@ -39,7 +39,7 @@ User Function CJOBSQL()
 	RestArea(aArea)	
 
 
-// Exemplo de uso para Windows
+// Exemplo de uso para Windows 1
     shellExecute("Open", "%windir%\system32\cmd.exe", " /k notepad c:\TOTVS 12\ANS\protheus_data\log\cliente.log", "c:\TOTVS 12\ANS\protheus_data\log", 1 )    
 	RpcClearEnv()
 
