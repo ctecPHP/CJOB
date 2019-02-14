@@ -4,7 +4,7 @@
 /*/{Protheus.doc} CJOB001
 Teste de execução de 'rotina automática' fora do schedule do Protheus 
 @type function
-@author Ademilson Nunes
+@author Ad2.1
 @since 10/02/2019
 @version 1.0
     @example    	
