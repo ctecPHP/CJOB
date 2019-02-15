@@ -1,0 +1,319 @@
+﻿@{
+    ViewBag.Title = "Consulta de Clientes";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row wrapper ">
+    <div class="col-lg-12">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title">
+                <h5>Filtros</h5>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content">
+                <div class="row">
+                    <div class="col-lg-11 m-b">
+                        <input type="text" class="form-control" id="edtPesquisar" placeholder="Pesquise por código, razão social ou nome fantasia ">
+                    </div>
+                    <div class="col-lg-1 ">
+                        <button class="btn btn-primary" id="btnPesquisar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <div class="col-lg-3">
+                        <label>Vendedor</label>
+                        <select class="form-control" id="cbVendedores">
+                            <option value="-1">Selecione um vendedor...</option>
+                            @foreach (var vendedor in Model.ListaDeVendedores)
+                            {
+                                <option value="@vendedor.CodigoVendedor">@vendedor.Nome</option>
+                            }
+                        </select>
+
+                    </div>
+
+                    <div class="col-lg-3">
+                        <label>Unidade de Faturamento</label>
+                        <select class="form-control cbfiltro" id="cbUnidFat">
+                            <option value="-1">Selecione uma Unid. de Faturamento...</option>
+                        </select>
+                    </div>
+
+                    <div class="col-lg-3">
+                        <label>Cidades</label>
+                        <select class="form-control cbfiltro" id="cbCidade">
+                        </select>
+
+                    </div>
+                    <div class="col-lg-3">
+                        <label>Status</label>
+                        <select class="form-control cbfiltro" id="cbStatus">
+                            <option value="-1">Selecione um status...</option>
+                            @foreach (var status in Model.ListaDeStatusCliente)
+                            {
+                                <option value="@status.Codigo">@status.Descricao</option>
+                            }
+                        </select>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox float-e-margins">
+                    <div class="ibox-title">
+                        <h5>Clientes</h5>
+
+                        <div class="ibox-tools">
+                            <a class="collapse-link">
+                                <i class="fa fa-chevron-up"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="ibox-content" id="divResult">
+
+                        @Html.Partial("~/Views/Partial/Consultas/_ListaClientesPartial.cshtml", (object)@Model)
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox float-e-margins">
+                    <div class="ibox-title">
+                        <h5>Totalizadores</h5>
+
+                        <div class="ibox-tools">
+                            <a class="collapse-link">
+                                <i class="fa fa-chevron-up"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+
+                        <div class="row">
+                            <div class="col-xs-4">
+                                <label>Total clientes</label>
+                                <input class="form-control" value="@Model.Totalizadores.TotalDeClientes" disabled />
+                            </div>
+                            <div class="col-xs-4">
+                                <label>Total grade</label>
+                                <input class="form-control" value="@Model.Totalizadores.TotalDeClientesNaGrade" disabled />
+                            </div>
+                            <div class="col-xs-4">
+                                <label>% Grade</label>
+                                <input class="form-control" value="@Model.Totalizadores.PercentualDeClientesNaGrade.ToString("P2")" disabled />
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+
+    function keyPressHandler(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            $(this).blur();
+            $("#btnPesquisar").focus().click();
+        }
+    }
+
+    $(document).ready(function () {
+        $('#edtPesquisar').keypress(keyPressHandler);
+
+        if ($('#cbVendedores option[value=' + @ViewBag.CodigoVendedor + ']').length != 0) {
+
+            $("#cbVendedores").val("@ViewBag.CodigoVendedor");
+            $("#cbVendedores").change();
+        }
+    });
+
+    $(".cbfiltro").change(function () {
+        realizarFiltro();
+    });
+
+    $("#cbVendedores").change(function () {
+        carregarUnidadesFaturamento();
+        carregarCidades();
+        validarVendaEmAberto();
+    });
+
+    function realizarFiltro() {
+
+        var pesquisa = $('#edtPesquisar').val();
+        var cidade = $('#cbCidade').val();
+        var status = $('#cbStatus').val();
+        var unidFat = $('#cbUnidFat').val();
+        var vendedor = $('#cbVendedores').val();
+
+        $("#divResult").load('@Url.Action("RealizarFiltro", "ConsultaDeClientes", null, Request.Url.Scheme)?filtroPesquisa=' + pesquisa +
+            '&filtroCidade=' + cidade +
+            '&filtroStatus=' + status +
+            '&filtroUnidFat=' + unidFat +
+            '&filtroVendedor=' + vendedor);
+    }
+
+    $('#btnPesquisar').click(function () {
+        realizarFiltro();
+    });
+
+    function carregarUnidadesFaturamento() {
+        var codigoVendedor = $('#cbVendedores').val();
+
+        if (isNullOrWhiteSpace(codigoVendedor))
+            codigoVendedor = '';
+
+        $.ajax({
+            url: 'ConsultaDeClientes/ObterComboUnidFat',
+            type: 'POST',
+            data: '{"codigoVendedor":"' + codigoVendedor + '"}',
+            contentType: 'application/json; charset=utf-8',
+            success: function (dados) {
+                preencherComboComOsValoresCodigoEDescricao('cbUnidFat', dados.ListaComValores);
+                realizarFiltro();
+            }
+        });
+    }
+
+    function carregarCidades() {
+        var codigoVendedor = $('#cbVendedores').val();
+
+        if (isNullOrWhiteSpace(codigoVendedor))
+            codigoVendedor = '';
+
+        $.ajax({
+            url: 'ConsultaDeClientes/ObterComboCidades',
+            type: 'POST',
+            data: '{"codigoVendedor":"' + codigoVendedor + '"}',
+            contentType: 'application/json; charset=utf-8',
+            success: function (dados) {
+                preencherComboComOsValoresCodigoEDescricao('cbCidade', dados, 'Selecione uma cidade...');
+                realizarFiltro();
+            }
+        });
+    }
+
+    function selecionarCliente(codigoCliente) {
+
+        var urlParams = new URLSearchParams(window.location.search);
+        var operacao = urlParams.get("operacao");
+        var unidFat = $('#cbUnidFat').val();
+        var vendedor = $('#cbVendedores').val();
+
+        $.ajax({
+            url: 'ConsultaDeClientes/ValidarSelecaoCliente',
+            type: 'POST',
+            data: '{"codigoCliente":"' + codigoCliente + '", "codigoVendedor":"' + vendedor + '", "codigoUnidFat":"' + unidFat + '", "operacao":"' + operacao + '"}',
+            contentType: 'application/json; charset=utf-8',
+            success: function (data) {
+
+                if (data.IsValido) {
+
+                    redirecionarParaAcaoNaSelecaoDoCliente(codigoCliente, vendedor, operacao, unidFat, '');
+                }
+                else {
+                    swal({
+                        title: "Atenção",
+                        text: data.Mensagem,
+                        type: "warning",
+                        confirmButtonColor: "#DD6B55",
+                        confirmButtonText: "Ok",
+                        closeOnConfirm: true
+                    });
+                }
+            }
+        });
+        //
+    }
+
+    function redirecionarParaAcaoNaSelecaoDoCliente(codigoCliente, codigoVendedor, operacao, codigoUnidFat, numPedidoAfv) {
+        console.log(codigoCliente, codigoVendedor, operacao, codigoUnidFat, numPedidoAfv);
+        $.ajax({
+            url: 'ConsultaDeClientes/RedirecionarParaAcao',
+            type: 'POST',
+            data: '{"codigoCliente":"' + codigoCliente + '", "codigoVendedor":"' + codigoVendedor + '", "operacao":"' + operacao + '", "codigoUnidFat":"' + codigoUnidFat + '", "numPedidoAfv":"' + numPedidoAfv + '"}',
+            contentType: 'application/json; charset=utf-8',
+            success: function (url) {
+
+                window.open(url, "_self");
+            }
+        });
+    }
+
+    function validarVendaEmAberto() {
+
+        var codigoVendedor = $('#cbVendedores').val();
+        var urlParams = new URLSearchParams(window.location.search);
+        var operacao = urlParams.get("operacao");
+
+        $.ajax({
+            url: 'ConsultaDeClientes/ValidarPossuiVendaEmAberto',
+            type: 'POST',
+            data: '{"codigoVendedor":"' + codigoVendedor + '"}',
+            contentType: 'application/json; charset=utf-8',
+            success: function (pedido) {
+
+                if (pedido) {
+
+                    swal({
+                        title: "Venda em aberto",
+                        text: "Você possui uma venda pendente.\nFinalize a mesma antes de continuar.\n\nRestaurar pedido?",
+                        type: "success",
+                        showCancelButton: true,
+                        confirmButtonColor: "#DD6B55",
+                        confirmButtonText: "Sim",
+                        cancelButtonText: "Não",
+                        closeOnConfirm: false
+                    }, function () {
+                        console.log(pedido.CodigoCliente, pedido.CodigoVendedor, operacao, pedido.CodigoUnidFat, pedido.NumPedidoAfv);
+                        redirecionarParaAcaoNaSelecaoDoCliente(pedido.CodigoCliente, pedido.CodigoVendedor, operacao, pedido.CodigoUnidFat, pedido.NumPedidoAfv);
+                    }, function () {
+                        apagarVendaPendente(pedido.NumPedidoAfv, pedido.CodigoVendedor);
+                    });
+                }
+            }
+        });
+    }
+
+    function apagarVendaPendente(codigoVendedor) {
+
+        $.ajax({
+            url: 'ConsultaDeClientes/RemoverVendaPendente',
+            type: 'POST',
+            data: '{"numPedidoAfv":"' + numPedidoAfv + '", "codigoVendedor":"' + codigoVendedor + '"}',
+            contentType: 'application/json; charset=utf-8',
+            success: function (data) {
+
+                if (!data.IsValido) {
+
+                    swal({
+                        title: "Atenção",
+                        text: data.Mensagem,
+                        type: "warning",
+                        confirmButtonColor: "#DD6B55",
+                        confirmButtonText: "Ok",
+                        closeOnConfirm: true
+                    });
+                }
+            }
+        });
+
+    }
+
+</script>
