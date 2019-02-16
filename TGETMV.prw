@@ -22,7 +22,12 @@
     /*/
 
  User Function TGETMV()
-    Local nDias := SuperGetMV( 'MV_DIAS', .T., '15', )
+
+    Local nDias := SuperGetMV( 'MV_DIAS', .T., '15', '01' )
+    
+    RpcSetType(3)	
+	RpcSetEnv( "99","01", "Administrador", " ", "FAT", "", aTables, , , ,  )
+
     MsgAlert( 'Result ' + nDias  )
 
 Return 
