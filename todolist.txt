@@ -1,3 +1,18 @@
 trello samples
 https://blog.trello.com/br/quadros-trello-para-todo-tipo-de-negocio?utm_source=welcome&utm_medium=email&utm_campaign=welcome-v2&utm_content=welcome_pt
+ sp_configure ‘show advanced options‘, 1; 
+ GO 
+ RECONFIGURE; 
+ GO 
+ EXEC sp_configure ‘Ad Hoc Distributed Queries‘, 1; 
+ GO 
+ RECONFIGURE; 
+
+ */ 
+
+ SELECT * INTO SFTX 
+ FROM OPENROWSET(‘SQLOLEDB‘,‘servidor‘;‘sa‘;‘senha_do_sa‘, 
+ ‘SELECT * FROM DADOSADV.dbo.SFT010‘) 
+ 
+
 

@@ -1,0 +1,43 @@
+
+
+/*/{Protheus.doc} Exemplo
+(long_description)
+@author    admin
+@since     21/02/2019
+@version   ${version}
+@example
+(examples)
+@see (links_or_references)
+/*/
+class Exemplo 
+	Data nAcumulador
+	Data nChamadas
+	
+	method new() constructor
+	method Soma( nNUm ) 
+
+endclass
+
+/*/{Protheus.doc} new
+Metodo construtor
+@author    admin
+@since     21/02/2019
+@version   ${version}
+@example
+(examples)
+@see (links_or_references)
+/*/
+// Criação do construtor, onde atribuimos os valores default 
+// para as propriedades e retornamos Self
+METHOD New() Class Exemplo
+::nAcumulador := 0
+::nChamadas := 0
+Return Self
+
+// Criação do Método de Soma , que recebe um número e o soma 
+// ao acumulador, retornando o conteudo do acumululador após
+// a soma , e incrementa em 1 o contador de chamadas do método
+METHOD Soma( nNum ) Class Exemplo
+::nAcumulador += nNum
+::nChamadas++
+Return ::nAcumulador

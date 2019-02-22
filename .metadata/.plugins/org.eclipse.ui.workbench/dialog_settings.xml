@@ -12,4 +12,10 @@
 		<list key="textArray">
 		</list>
 	</section>
+	<section name="NewWizardAction">
+		<item value="br.com.totvs.tds.sdk.advpl.ui.wizard.ClassAssistantWizard" key="NewWizardSelectionPage.STORE_SELECTED_ID"/>
+		<list key="NewWizardSelectionPage.STORE_EXPANDED_CATEGORIES_ID">
+			<item value="br.com.totvs.tds.sdk.advpl.ui.category"/>
+		</list>
+	</section>
 </section>
