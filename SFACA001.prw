@@ -35,6 +35,26 @@ T_PEDIDOITEM_SOBEL
 
 */
 
+/*
+	# Changelog
+		All notable changes to this project will be documented in this file.	
+
+	## [0.0.1]	- 18-02-2019
+	### Changed
+		Static Function CARGAC5()
+		Line 275 - concatenação da string 'portal' + (cAliasQr1)->ORDEMCOMPRA
+  ## [0.0.2]  - 20-02-2019
+				Line 120, 173, 227 - Query UPDATE modificada para gravação da data e hora da integração com o ERP
+		  'DATAINTEGRACAOERP = CAST(GETDATE() AS DATETIME)'
+   
+    ## [0.0.1] - 18-02-2019
+	### Added 
+		Change query
+		Line 88, 141 e 195 - add column " ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA  "  foi adicionada.
+
+*/ 
+
+
 User Function SFACA001()
 Private cAliasQr1 := GetNextAlias()
 Private cAliasQr2 := GetNextAlias()
@@ -54,6 +74,7 @@ clog	:= "112233"
 fWrite(nFileLog,cLog)
 */
 
+Conout("JOB ACACIA - SFACA001 - "+time())
 // INTEGRA DATAINTEGRACAOERP VAZIO OU NULL
 
 //SOLBEL
@@ -67,7 +88,6 @@ cQuery += " Convert (Varchar, CAST(DATAENTREGA As date),112) XDATAENTREGA, "
 cQuery += " ISNULL(CODIGOCLIENTE ,'') CODIGOCLIENTE, ISNULL(LOJACLIENTE ,'') LOJACLIENTE, ISNULL(CODIGOCONDPAGTO ,'') CODIGOCONDPAGTO, "
 cQuery += " ISNULL(NUMPEDIDOAFV ,'') NUMPEDIDOAFV, ISNULL(VOLUME ,'') VOLUME, ISNULL(CODIGOVENDEDORESP ,'') CODIGOVENDEDORESP, "
 cQuery += " ISNULL(OBSERVACAOI ,'') OBSERVACAOI, ISNULL(OBSERVACAOII ,'') OBSERVACAOII,ISNULL(CODIGOUNIDFAT ,'') CODIGOUNIDFAT,  "
-//cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO  "
 cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA  "
 cQuery += " FROM T_PEDIDO_SOBEL SC5 "
 cQuery += " WHERE CODIGOUNIDFAT = '01' "
@@ -100,7 +120,7 @@ While !(cAliasQr1)->(EOF())
 	// CHAMA EXECAUTO
 	SFACAGRV()
 	If lOK
-		cGRVC5	:= " UPDATE T_PEDIDO_SOBEL SET NUMPEDIDOSOBEL = '"+cDoc+"' , DATAINTEGRACAOERP = '"+DtoS(dDataBase)+"' WHERE CODIGOUNIDFAT = '01' AND NUMPEDIDOAFV = '"+cNumAFV+"' "
+		cGRVC5	:= " UPDATE T_PEDIDO_SOBEL SET NUMPEDIDOSOBEL = '"+cDoc+"' , DATAINTEGRACAOERP = CAST(GETDATE() AS DATETIME) WHERE CODIGOUNIDFAT = '01' AND NUMPEDIDOAFV = '"+cNumAFV+"' "
 		TCSqlExec(cGRVC5)
 	EndIf
 	(cAliasQr1)->(DbSkip())
@@ -120,8 +140,100 @@ cQuery := " SELECT Convert (Varchar, CAST(DATAPEDIDO As date),112) XDATAPEDIDO, 
 cQuery += " Convert (Varchar, CAST(DATAENTREGA As date),112) XDATAENTREGA, "
 cQuery += " ISNULL(CODIGOCLIENTE ,'') CODIGOCLIENTE, ISNULL(LOJACLIENTE ,'') LOJACLIENTE, ISNULL(CODIGOCONDPAGTO ,'') CODIGOCONDPAGTO, "
 cQuery += " ISNULL(NUMPEDIDOAFV ,'') NUMPEDIDOAFV, ISNULL(VOLUME ,'') VOLUME, ISNULL(CODIGOVENDEDORESP ,'') CODIGOVENDEDORESP, "
-'>::cQuery += " ISNULL(OBSERVACAOI ,'') OBSERVACAOI, ISNULL(OBSERVACAOII ,'') OBSERVACAOII,ISNULL(CODIGOUNIDFAT ,'') CODIGOUNIDFAT,  "
-//cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO  "
+cQuery += " ISNULL(OBSERVACAOI ,'') OBSERVACAOI, ISNULL(OBSERVACAOII ,'') OBSERVACAOII,ISNULL(CODIGOUNIDFAT ,'') CODIGOUNIDFAT,  "
+cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA  "
+cQuery += " FROM T_PEDIDO_SOBEL SC5 "
+cQuery += " WHERE CODIGOUNIDFAT = '02' "
+cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
+
+cQuery := ChangeQuery(cQuery)
+dbUseArea(.T., 'TOPCONN', TCGenQry(,,cQuery),cAliasQr1, .F., .T.)
+
+While !(cAliasQr1)->(EOF())
+	lOK	:= .F.
+	cNumAFV	:= (cAliasQr1)->NUMPEDIDOAFV
+	cUniFat	:= (cAliasQr1)->CODIGOUNIDFAT
+	nSecC6	:= 0
+	
+	CARGAC5()
+	
+	cQuery := " SELECT ISNULL(NUMITEM ,'') NUMITEM, ISNULL(CODIGOPRODUTO ,'') CODIGOPRODUTO, ISNULL(QTDEVENDA ,'') QTDEVENDA, "
+	cQuery += " ISNULL(VALORVENDA ,'') VALORVENDA, ISNULL(VALORBRUTO ,'') VALORBRUTO, ISNULL(NUMPEDIDOAFV ,'') NUMPEDIDOAFV "
+	cQuery += " FROM T_PEDIDOITEM_SOBEL SC6 "
+	cQuery += " WHERE NUMPEDIDOAFV = '"+(cAliasQr1)->NUMPEDIDOAFV+"' "
+	cQuery := ChangeQuery(cQuery)
+	dbUseArea(.T., 'TOPCONN', TCGenQry(,,cQuery),cAliasQr2, .F., .T.)
+	
+	While !(cAliasQr2)->(EOF())
+		CARGAC6()
+		(cAliasQr2)->(DbSkip())
+	EndDo
+	(cAliasQr2)->(dbCloseArea())
+	
+	// CHAMA EXECAUTO
+	SFACAGRV()
+	If lOK
+		cGRVC5	:= " UPDATE T_PEDIDO_SOBEL SET NUMPEDIDOSOBEL = '"+cDoc+"' , DATAINTEGRACAOERP = CAST(GETDATE() AS DATETIME) WHERE CODIGOUNIDFAT = '02' AND NUMPEDIDOAFV = '"+cNumAFV+"' "
+		TCSqlExec(cGRVC5)
+	EndIf
+	(cAliasQr1)->(DbSkip())
+EndDo
+(cAliasQr1)->(dbCloseArea())
+If !(Type("oMainWnd")=="O")	  //Se via schedule
+	RESET ENVIRONMENT
+EndIf
+
+
+//3F
+If !(Type("oMainWnd")=="O")	  //Se via schedule
+	PREPARE ENVIRONMENT EMPRESA '04' FILIAL '01' MODULO "FAT" TABLES "SC5","SC6","SA1","SA2","SB1","SB2","SF4"
+EndIf
+
+
+cQuery := " SELECT Convert (Varchar, CAST(DATAPEDIDO As date),112) XDATAPEDIDO, "
+cQuery += " Convert (Varchar, CAST(DATAENTREGA As date),112) XDATAENTREGA, "
+cQuery += " ISNULL(CODIGOCLIENTE ,'') CODIGOCLIENTE, ISNULL(LOJACLIENTE ,'') LOJACLIENTE, ISNULL(CODIGOCONDPAGTO ,'') CODIGOCONDPAGTO, "
+cQuery += " ISNULL(NUMPEDIDOAFV ,'') NUMPEDIDOAFV, ISNULL(VOLUME ,'') VOLUME, ISNULL(CODIGOVENDEDORESP ,'') CODIGOVENDEDORESP, "
+cQuery += " ISNULL(OBSERVACAOI ,'') OBSERVACAOI, ISNULL(OBSERVACAOII ,'') OBSERVACAOII,ISNULL(CODIGOUNIDFAT ,'') CODIGOUNIDFAT,  "
+cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA  "
+cQuery += " FROM T_PEDIDO_SOBEL SC5 "
+cQuery += " WHERE CODIGOUNIDFAT = '04' "
+cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
+
+cQuery := ChangeQuery(cQuery)
+dbUseArea(.T., 'TOPCONN', TCGenQry(,,cQuery),cAliasQr1, .F., .T.)
+
+While !(cAliasQr1)->(EOF())
+	lOK	:= .F.
+	cNumAFV	:= (cAliasQr1)->NUMPEDIDOAFV
+	cUniFat	:= (cAliasQr1)->CODIGOUNIDFAT
+	nSecC6	:= 0
+	
+	CARGAC5()
+	
+	cQuery := " SELECT ISNULL(NUMITEM ,'') NUMITEM, ISNULL(CODIGOPRODUTO ,'') CODIGOPRODUTO, ISNULL(QTDEVENDA ,'') QTDEVENDA, "
+	cQuery += " ISNULL(VALORVENDA ,'') VALORVENDA, ISNULL(VALORBRUTO ,'') VALORBRUTO, ISNULL(NUMPEDIDOAFV ,'') NUMPEDIDOAFV "
+	cQuery += " FROM T_PEDIDOITEM_SOBEL SC6 "
+	cQuery += " WHERE NUMPEDIDOAFV = '"+(cAliasQr1)->NUMPEDIDOAFV+"' "
+	cQuery := ChangeQuery(cQuery)
+	dbUseArea(.T., 'TOPCONN', TCGenQry(,,cQuery),cAliasQr2, .F., .T.)
+	
+	While !(cAliasQr2)->(EOF())
+		CARGAC6()
+		(cAliasQr2)->(DbSkip())
+	EndDo
+	(cAliasQr2)->(dbCloseArea())
+	
+	// CHAMA EXECAUTO
+	SFACAGRV()
+	If lOK
+		cGRVC5	:= " UPDATE T_PEDIDO_SOBEL SET NUMPEDIDOSOBEL = '"+cDoc+"' , DATAINTEGRACAOERP = CAST(GETDATE() AS DATETIME) WHERE CODIGOUNIDFAT = '04' AND NUMPEDIDOAFV = '"+cNumAFV+"' " //elvis colocar um iff verificando se a variavel cDoc esta preenchida , se nao grava "K"
+		TCSqlExec(cGRVC5)
+	EndIf
+	(cAliasQr1)->(DbSkip())
+EndDo
+(cAliasQr1)->(dbCloseArea())
+
 
 If !(Type("oMainWnd")=="O")	  //Se via schedule
 	RESET ENVIRONMENT
