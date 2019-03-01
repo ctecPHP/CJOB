@@ -1,0 +1,53 @@
+DECLARE 
+	@DTINI DATE,
+	@DTFIN DATE,
+	@DAY DATE,
+	@QUERY NVARCHAR(max),
+	@CONT INT,
+	@NDIAS INT
+
+BEGIN     
+	SET @DTINI	= '20181231'
+	SET @DTFIN	= '20181231'
+	SET @CONT 	= 0
+	SET @QUERY 	= ''
+	SET @NDIAS = DATEDIFF(DD, @DTINI, @DTFIN) -- CONTA Nº DIAS ENTRE AS DATAS
+    
+    WHILE @CONT <= @NDIAS
+    BEGIN
+        SET @DAY = DATEADD(DAY, @CONT, @DTINI)	
+    	SET @QUERY += 'SELECT SD3.D3_COD, '
+    	SET @QUERY += 'SB1.B1_DESC, '
+    	SET @QUERY += 'SUM(SD3.D3_QUANT) AS QTDE, '
+    	SET @QUERY += '"DT_ENTRADA" = ''' + CAST(@DAY AS VARCHAR) + '''' 
+    	SET @QUERY += ' FROM SD3020 SD3 '
+    	SET @QUERY += 'INNER JOIN SB1020 SB1 ON SB1.B1_COD = SD3.D3_COD '
+    	SET @QUERY += 'WHERE SD3.D3_TM = ''040'' '
+        --SET @QUERY += 'WHERE SD3.D3_ZZLOTE LIKE ''18%'''
+    	--SET @QUERY += 'AND SD3.D3_TM = ''040'' '
+    	--SET @QUERY += 'AND SD3.D3_CC = ''4010'' '
+    	SET @QUERY += 'AND SD3.D3_ESTORNO <> ''S'' '
+    	SET @QUERY += 'AND SD3.D3_EMISSAO BETWEEN ''' + REPLACE(CAST(@DAY AS VARCHAR), '-','')  + ''' AND ''' + REPLACE(CAST(@DAY AS VARCHAR), '-','') + ''' '
+        SET @QUERY += 'GROUP BY SD3.D3_COD, '
+        SET @QUERY += 'SB1.B1_DESC' 
+
+    	IF @CONT = @NDIAS
+		   BEGIN 										
+			     SET @QUERY += ''	
+		   END      
+		ELSE
+		   BEGIN
+			     SET @QUERY += ' UNION '
+		   END   
+
+    	SET @CONT += 1	    	
+    END	
+		   -- PRINT(CAST(@QUERY AS NTEXT)) -- TESTE DE SAÍDA
+           EXEC(@QUERY)
+END
+GO
+
+
+
+
+
