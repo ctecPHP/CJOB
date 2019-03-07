@@ -10,7 +10,7 @@
 	----------------------------------------------------------------------------------------------------------------------------------------------
 */
 DECLARE @CODPROD AS VARCHAR(14)
-SET @CODPROD  = '2211.02.06X240'
+SET @CODPROD  = '1001.01.06X02L'
 
 SELECT 	'ITEM'       = @CODPROD,
 	   	'DESC' 		 = (SELECT B1_DESC FROM SB1010 WHERE B1_COD = @CODPROD),
@@ -30,7 +30,6 @@ SELECT 	'ITEM'       = @CODPROD,
 						FROM SB2040
 						WHERE B2_COD = @CODPROD
 						AND B2_QATU <> 0 
-						AND D_E_L_E_T_ = '')
-
+						AND D_E_L_E_T_ = ''),	  	
 GO
 
