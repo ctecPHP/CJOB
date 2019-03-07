@@ -10,18 +10,26 @@ description
 //-------------------------------------------------------------------
 User Function AFV001()
     Local 	aTables := {"SC5"}
+    Local   aResult := {}
    // Local   cResult := ''
-    Private cFileLog  := "ACACIA"+"\RESULT.log"
-    //Private cLogObj   := FCreate(cFileLog)
+    Private cFileLog  := "LOG"+"\RESULT.log"
+    Private cLogObj   := FCreate(cFileLog)
 
     RpcSetType(3) 
-	RpcSetEnv( "02","01", "Administrador", "312rw218", "FAT", "", aTables, , , ,  )	
-    setC5PedBon( getC5Num('1550853723973'), 'TST1')
+	//RpcSetEnv( "02","01", "Administrador", "312rw218", "FAT", "", aTables, , , ,  )
+    RpcSetEnv( "99","01", "Administrador", " ", "FAT", "", aTables, , , ,  )
+  //  setC5PedBon( getC5Num('1550853723973'), 'TST1')
 
 
     //cResult := getC5Num('1550853723973')
     //FWrite(cLogObj, 'Resultado: ' + cResult)
 
+    aResult := strToArray('1549028135405,1549028135405')
+
+        For nX := 1 to Len(aResult)
+            FWrite ( cLogObj, cValToChar( aResult[nX] ) +  chr(13) )    
+        Next
+        
     //setC5PedBon('097039', 'TST')
 
     RpcClearEnv()
@@ -29,12 +37,12 @@ User Function AFV001()
 Return Nil
 
 /*/{Protheus.doc} getC5Num
-    Retorna o C5_NUM do pedido de venda a partir do NUMPEDIDO AFV Acácia
+    Retorna o C5_NUM do pedido de venda a partir do NUMPEDIDO AFV Acï¿½cia
     @type  Static Function
     @author Ademilson Nunes
     @since 28/02/2019
     @version 12.0.0
-    @param cNumAFV, caracter, número do pedido no AFV (T_PEDIDO_SOBEL->NUMPEDIDOAFV)
+    @param cNumAFV, caracter, nï¿½mero do pedido no AFV (T_PEDIDO_SOBEL->NUMPEDIDOAFV)
     @return cResult, caracter, retorna o C5_NUM do pedido de venda
     /*/
 Static Function getC5Num( cNumAFV )
@@ -65,7 +73,7 @@ Return cResult
     @author Ademilson Nunes
     @since 28/02/2019
     @version 12.0.0
-    @param cC5Num, caracter, C5_NUM do pedido que será alterado
+    @param cC5Num, caracter, C5_NUM do pedido que serï¿½ alterado
     /*/
 Static Function setC5PedBon( cC5Num, cC5PedBon )
     Local aArea := GetArea()
@@ -84,3 +92,14 @@ Static Function setC5PedBon( cC5Num, cC5PedBon )
    SC5->(DbCloseArea())
    RestArea(aArea)
 Return Nil
+
+
+static function strToArray( cNumPvAss )
+    //No minimo 2 pedidos vindos do tablet concatenados por ,
+    If ',' $ cNumPvAss .And. Len( cNumPvAss ) >= 27
+            aResult := Strtokarr( cNumPvAss, ',' )            
+    else 
+        AAdd(cResult, cNumPvAss)
+    EndIf
+    
+Return aResult
