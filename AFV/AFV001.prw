@@ -11,7 +11,7 @@ description
 //-------------------------------------------------------------------
 User Function AFV001()
     Local 	aTables := {"SC5"}
-    Local   aResult := {}
+    Local   aResult := {'123456', '123456', '123456'}
     Local   nX      := 0
    // Local   cResult := ''
     //Private cFileLog  := "LOG"+"\RESULT.log"
@@ -19,21 +19,28 @@ User Function AFV001()
     Private cLogObj   := FCreate(cFileLog)
 
     RpcSetType(3) 
-	RpcSetEnv( "04","01", "Administrador", "312rw218", "FAT", "", aTables, , , ,  )
+	RpcSetEnv( "02","01", "Administrador", "312rw218", "FAT", "", aTables, , , ,  )
     //RpcSetEnv( "99","01", "Administrador", " ", "FAT", "", aTables, , , ,  )
     //setC5PedBon( getC5Num('1550853723973'), 'TST1')
    // PREPARE ENVIRONMENT EMPRESA '02' FILIAL '01' MODULO "FAT" TABLES "SC5","SC6","SA1","SA2","SB1","SB2","SF4"
 
 
-    //cResult := getC5Num('1550853723973')
-    //FWrite(cLogObj, 'Resultado: ' + cResult)
+    //cResult := getPvAss('W1170303192203130')
 
+    cResult := StrTran( AsString( aResult ), '{', '' )
+    cResult := StrTran (cResult, '}', '')
+    
+    FWrite(cLogObj, 'Resultado: ' + 
+    )
+
+
+    /*
     aResult := getC5NumV('W1100703191809143')
 
         For nX := 1 to Len(aResult)
             FWrite ( cLogObj, cValToChar( aResult[nX] ) +  " " )    
         Next
-        
+    */
     //setC5PedBon('097039', 'TST')
 
     RpcClearEnv()
@@ -124,3 +131,34 @@ static function getC5NumV( cNumPvAss )
     EndIf
     
 Return aResult
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} getPvAss
+    Retorna CESP_NUMPEDIDOASSOC, a partir do NUMPEDIDOAFV
+    Este campo pode conter, um ou mais código NUMPEDIDOAFV 
+    separados por virgula relacionados a um pedido de bonificação
+@author  Ademilson Nunes
+@since   08/03/2019
+@version 12.0.0
+@param cNumAFV, caracter, NUMPEDIDOAFV
+/*/
+//-------------------------------------------------------------------
+static function getPvAss( cNumAFV )
+    Local cResult := ''
+    Local aArea   := GetArea()
+
+    BeginSQL Alias 'AFV'
+        SELECT CESP_NUMPEDIDOASSOC AS NPVASS
+        FROM  T_PEDIDO_SOBEL   
+        WHERE 
+        NUMPEDIDOAFV = %Exp:cNumAFV%  
+    EndSQL
+
+    While !AFV->(EoF())
+        cResult := AllTrim(cValToChar( AFV->NPVASS ))    
+        AFV->(DbSkip())
+    EndDo
+
+    AFV->(DbCloseArea())
+	RestArea(aArea)	
+Return cResult

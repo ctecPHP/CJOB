@@ -61,6 +61,7 @@ Private cAliasQr2 := GetNextAlias()
 Private aCabec 	:= {}
 Private aItens 	:= {}
 Private aLinha 	:= {}
+Private aPvBon  //array recebe NUMPEDIDOAFV de pedidos de bonificação
 Private cDoc	:= ""
 Private cNumAFV	:= ""
 Private cCamGrv := "ACACIA\ERRO"+"\PV_ERRO_"+ DTOS(DATE()) +"_"+ STRTRAN(TIME(),":","")+"_"
@@ -88,7 +89,7 @@ cQuery += " Convert (Varchar, CAST(DATAENTREGA As date),112) XDATAENTREGA, "
 cQuery += " ISNULL(CODIGOCLIENTE ,'') CODIGOCLIENTE, ISNULL(LOJACLIENTE ,'') LOJACLIENTE, ISNULL(CODIGOCONDPAGTO ,'') CODIGOCONDPAGTO, "
 cQuery += " ISNULL(NUMPEDIDOAFV ,'') NUMPEDIDOAFV, ISNULL(VOLUME ,'') VOLUME, ISNULL(CODIGOVENDEDORESP ,'') CODIGOVENDEDORESP, "
 cQuery += " ISNULL(OBSERVACAOI ,'') OBS1, ISNULL(OBSERVACAOII ,'') OBS2,ISNULL(CODIGOUNIDFAT ,'') CODIGOUNIDFAT,  "
-cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA  "
+cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA, ISNULL(CESP_NUMPEDIDOASSOC, '') NUMPVASSOC  "
 cQuery += " FROM T_PEDIDO_SOBEL SC5 "
 cQuery += " WHERE CODIGOUNIDFAT = '01' "
 cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
@@ -96,12 +97,19 @@ cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
 cQuery := ChangeQuery(cQuery)
 dbUseArea(.T., 'TOPCONN', TCGenQry(,,cQuery),cAliasQr1, .F., .T.)
 
+aPvBon := {} 
 While !(cAliasQr1)->(EOF())
 	lOK	:= .F.
 	cNumAFV	:= (cAliasQr1)->NUMPEDIDOAFV
 	cUniFat	:= (cAliasQr1)->CODIGOUNIDFAT
 	nSecC6	:= 0
 	
+	//Se bonificação - aPvBon recebe cNumAFV
+	If (cAliasQr1)->CODIGOTIPOPEDIDO == 'F'
+		AAdd( aPvBon, cNumAFV )
+	EndIf
+		
+
 	CARGAC5()
 	
 	cQuery := " SELECT ISNULL(NUMITEM ,'') NUMITEM, ISNULL(CODIGOPRODUTO ,'') CODIGOPRODUTO, ISNULL(QTDEVENDA ,'') QTDEVENDA, "
@@ -119,6 +127,7 @@ While !(cAliasQr1)->(EOF())
 	
 	// CHAMA EXECAUTO
 	SFACAGRV()
+	cDoc := getC5Num(cNumAFV)
 	If lOK
 		cGRVC5	:= " UPDATE T_PEDIDO_SOBEL SET NUMPEDIDOSOBEL = '"+cDoc+"' , DATAINTEGRACAOERP = CAST(GETDATE() AS DATETIME) WHERE CODIGOUNIDFAT = '01' AND NUMPEDIDOAFV = '"+cNumAFV+"' "
 		TCSqlExec(cGRVC5)
@@ -126,6 +135,20 @@ While !(cAliasQr1)->(EOF())
 	(cAliasQr1)->(DbSkip())
 EndDo
 (cAliasQr1)->(dbCloseArea())
+
+
+	//Trata amarração dos pedidos normais com a bonificação
+	For nX:= 1 to Len(aPvBon)
+		aRes := getC5NumV( getPvAss(aPvBon[nX]) ) 
+		cVar := StrTran( StrTran( AsString( aRes ), '{', '' ), '}', '' )
+
+		setC5PedBon( getC5Num(aPvBon[nX]),  cVar) 
+		For nI:= 1 to Len( aRes )
+			setC5PedBon( aRes[nI], aPvBon[nX] )
+		Next		
+	Next
+
+
 If !(Type("oMainWnd")=="O")	  //Se via schedule
 	RESET ENVIRONMENT
 EndIf
@@ -141,7 +164,7 @@ cQuery += " Convert (Varchar, CAST(DATAENTREGA As date),112) XDATAENTREGA, "
 cQuery += " ISNULL(CODIGOCLIENTE ,'') CODIGOCLIENTE, ISNULL(LOJACLIENTE ,'') LOJACLIENTE, ISNULL(CODIGOCONDPAGTO ,'') CODIGOCONDPAGTO, "
 cQuery += " ISNULL(NUMPEDIDOAFV ,'') NUMPEDIDOAFV, ISNULL(VOLUME ,'') VOLUME, ISNULL(CODIGOVENDEDORESP ,'') CODIGOVENDEDORESP, "
 cQuery += " ISNULL(OBSERVACAOI ,'') OBS1, ISNULL(OBSERVACAOII ,'') OBS2,ISNULL(CODIGOUNIDFAT ,'') CODIGOUNIDFAT,  "
-cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA  "
+cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA, ISNULL(CESP_NUMPEDIDOASSOC, '') NUMPVASSOC "
 cQuery += " FROM T_PEDIDO_SOBEL SC5 "
 cQuery += " WHERE CODIGOUNIDFAT = '02' "
 cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
@@ -149,11 +172,19 @@ cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
 cQuery := ChangeQuery(cQuery)
 dbUseArea(.T., 'TOPCONN', TCGenQry(,,cQuery),cAliasQr1, .F., .T.)
 
+aPvBon := {} 
 While !(cAliasQr1)->(EOF())
 	lOK	:= .F.
 	cNumAFV	:= (cAliasQr1)->NUMPEDIDOAFV
 	cUniFat	:= (cAliasQr1)->CODIGOUNIDFAT
 	nSecC6	:= 0
+
+
+	//Se bonificação - aPvBon recebe cNumAFV
+	If (cAliasQr1)->CODIGOTIPOPEDIDO == 'F'
+		AAdd( aPvBon, cNumAFV )
+	EndIf
+		
 	
 	CARGAC5()
 	
@@ -172,6 +203,7 @@ While !(cAliasQr1)->(EOF())
 	
 	// CHAMA EXECAUTO
 	SFACAGRV()
+	cDoc := getC5Num(cNumAFV)
 	If lOK
 		cGRVC5	:= " UPDATE T_PEDIDO_SOBEL SET NUMPEDIDOSOBEL = '"+cDoc+"' , DATAINTEGRACAOERP = CAST(GETDATE() AS DATETIME) WHERE CODIGOUNIDFAT = '02' AND NUMPEDIDOAFV = '"+cNumAFV+"' "
 		TCSqlExec(cGRVC5)
@@ -179,6 +211,20 @@ While !(cAliasQr1)->(EOF())
 	(cAliasQr1)->(DbSkip())
 EndDo
 (cAliasQr1)->(dbCloseArea())
+
+
+//Trata amarração dos pedidos normais com a bonificação
+	For nX:= 1 to Len(aPvBon)
+		aRes := getC5NumV( getPvAss(aPvBon[nX]) ) 
+		cVar := StrTran( StrTran( AsString( aRes ), '{', '' ), '}', '' )
+
+		setC5PedBon( getC5Num(aPvBon[nX]),  cVar) 
+		For nI:= 1 to Len( aRes )
+			setC5PedBon( aRes[nI], aPvBon[nX] )
+		Next		
+	Next
+
+
 If !(Type("oMainWnd")=="O")	  //Se via schedule
 	RESET ENVIRONMENT
 EndIf
@@ -195,7 +241,7 @@ cQuery += " Convert (Varchar, CAST(DATAENTREGA As date),112) XDATAENTREGA, "
 cQuery += " ISNULL(CODIGOCLIENTE ,'') CODIGOCLIENTE, ISNULL(LOJACLIENTE ,'') LOJACLIENTE, ISNULL(CODIGOCONDPAGTO ,'') CODIGOCONDPAGTO, "
 cQuery += " ISNULL(NUMPEDIDOAFV ,'') NUMPEDIDOAFV, ISNULL(VOLUME ,'') VOLUME, ISNULL(CODIGOVENDEDORESP ,'') CODIGOVENDEDORESP, "
 cQuery += " ISNULL(OBSERVACAOI ,'') OBS1, ISNULL(OBSERVACAOII ,'') OBS2,ISNULL(CODIGOUNIDFAT ,'') CODIGOUNIDFAT,  "
-cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA  "
+cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA, ISNULL(CESP_NUMPEDIDOASSOC, '') NUMPVASSOC "
 cQuery += " FROM T_PEDIDO_SOBEL SC5 "
 cQuery += " WHERE CODIGOUNIDFAT = '04' "
 cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
@@ -203,14 +249,22 @@ cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
 cQuery := ChangeQuery(cQuery)
 dbUseArea(.T., 'TOPCONN', TCGenQry(,,cQuery),cAliasQr1, .F., .T.)
 
+aPvBon := {} 
 While !(cAliasQr1)->(EOF())
 	lOK	:= .F.
 	cNumAFV	:= (cAliasQr1)->NUMPEDIDOAFV
 	cUniFat	:= (cAliasQr1)->CODIGOUNIDFAT
 	nSecC6	:= 0
-	
+
+
+	//Se bonificação - aPvBon recebe cNumAFV
+	If (cAliasQr1)->CODIGOTIPOPEDIDO == 'F'
+		AAdd( aPvBon, cNumAFV )
+	EndIf
+		
+		
 	CARGAC5()
-	
+
 	cQuery := " SELECT ISNULL(NUMITEM ,'') NUMITEM, ISNULL(CODIGOPRODUTO ,'') CODIGOPRODUTO, ISNULL(QTDEVENDA ,'') QTDEVENDA, "
 	cQuery += " ISNULL(VALORVENDA ,'') VALORVENDA, ISNULL(VALORBRUTO ,'') VALORBRUTO, ISNULL(NUMPEDIDOAFV ,'') NUMPEDIDOAFV "
 	cQuery += " FROM T_PEDIDOITEM_SOBEL SC6 "
@@ -226,6 +280,7 @@ While !(cAliasQr1)->(EOF())
 	
 	// CHAMA EXECAUTO
 	SFACAGRV()
+	cDoc := getC5Num(cNumAFV)
 	If lOK
 		cGRVC5	:= " UPDATE T_PEDIDO_SOBEL SET NUMPEDIDOSOBEL = '"+cDoc+"' , DATAINTEGRACAOERP = CAST(GETDATE() AS DATETIME) WHERE CODIGOUNIDFAT = '04' AND NUMPEDIDOAFV = '"+cNumAFV+"' " //elvis colocar um iff verificando se a variavel cDoc esta preenchida , se nao grava "K"
 		TCSqlExec(cGRVC5)
@@ -233,6 +288,18 @@ While !(cAliasQr1)->(EOF())
 	(cAliasQr1)->(DbSkip())
 EndDo
 (cAliasQr1)->(dbCloseArea())
+
+
+//Trata amarração dos pedidos normais com a bonificação
+	For nX:= 1 to Len(aPvBon)
+		aRes := getC5NumV( getPvAss(aPvBon[nX]) ) 
+		cVar := StrTran( StrTran( AsString( aRes ), '{', '' ), '}', '' )
+
+		setC5PedBon( getC5Num(aPvBon[nX]),  cVar) 
+		For nI:= 1 to Len( aRes )
+			setC5PedBon( aRes[nI], aPvBon[nX] )
+		Next		
+	Next
 
 
 If !(Type("oMainWnd")=="O")	  //Se via schedule
@@ -260,8 +327,8 @@ Return()
 */
 
 Static Function CARGAC5()
-cDoc 	:= GetSxeNum("SC5","C5_NUM")
-RollbackSx8()
+//cDoc 	:= GetSxeNum("SC5","C5_NUM")
+//RollbackSx8()
 aCabec 	:= {}
 aItens	:= {}
 
@@ -445,13 +512,15 @@ Static Function getC5Num( cNumAFV )
 	RestArea(aArea)	
 Return cResult
 
+
 /*/{Protheus.doc} setC5PedBon
-    Atualiza campo C5_PEDBON
+    Atualiza campo C5_PEDBON na tabela SC5
     @type  Static Function
     @author Ademilson Nunes
     @since 28/02/2019
     @version 12.0.0
     @param cC5Num, caracter, C5_NUM do pedido que será alterado
+	@param cC5PedBon, caracter, valor a ser gravado no campo C5_PEDBON
     /*/
 Static Function setC5PedBon( cC5Num, cC5PedBon )
     Local aArea := GetArea()
@@ -470,3 +539,64 @@ Static Function setC5PedBon( cC5Num, cC5PedBon )
    SC5->(DbCloseArea())
    RestArea(aArea)
 Return Nil
+
+
+/*/{Protheus.doc} getC5NumV
+    Retorna um array com todos os pedidos de venda (C5_NUM), apartir de um lote ou um único NUMPEDIDOAFV
+	armazenado na coluna CESP_NUMPEDIDOASSOC
+    @type  Static Function
+    @author Ademilson Nunes
+    @since 07/03/2019
+    @version 12.0.0
+    @param cNumPvAss, caracter, códigos NUMPEDIDOAFV (lote separado por virgula ou código único)
+    /*/
+static function getC5NumV( cNumPvAss )
+    Local aVetor  := {}
+    Local aResult := {}
+    Local nX      := 0
+    
+    //No minimo 2 pedidos vindos do tablet concatenados por ,
+    If ',' $ cNumPvAss .And. Len( cNumPvAss ) >= 27
+            aVetor := Strtokarr( cNumPvAss, ',' ) 
+            If Len(aVetor) <> 0
+                For nX:= 1 to Len(aVetor)
+                    AAdd( aResult, getC5Num(cValToChar(aVetor[nX]) ) )
+                Next                
+            EndIf           
+    else 
+        AAdd(aResult, getC5Num(cNumPvAss) )
+    EndIf
+    
+Return aResult
+
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} getPvAss
+    Retorna CESP_NUMPEDIDOASSOC, a partir do NUMPEDIDOAFV
+    Este campo pode conter, um ou mais código NUMPEDIDOAFV 
+    separados por virgula relacionados a um pedido de bonificação
+@author  Ademilson Nunes
+@since   08/03/2019
+@version 12.0.0
+@param cNumAFV, caracter, NUMPEDIDOAFV
+/*/
+//-------------------------------------------------------------------
+static function getPvAss( cNumAFV )
+    Local cResult := ''
+    Local aArea   := GetArea()
+
+    BeginSQL Alias 'AFV'
+        SELECT CESP_NUMPEDIDOASSOC AS NPVASS
+        FROM  T_PEDIDO_SOBEL   
+        WHERE 
+        NUMPEDIDOAFV = %Exp:cNumAFV%  
+    EndSQL
+
+    While !AFV->(EoF())
+        cResult := AllTrim(cValToChar( AFV->NPVASS ))    
+        AFV->(DbSkip())
+    EndDo
+
+    AFV->(DbCloseArea())
+	RestArea(aArea)	
+Return cResult
