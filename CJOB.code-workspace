@@ -5,7 +5,8 @@
 		}
 	],
 	"settings": {
-		"advpl.selectedEnvironment": "DEV",
-		"git.ignoreLimitWarning": true
+		"advpl.selectedEnvironment": "JOBS",
+		"git.ignoreLimitWarning": true,
+		"advpl.workspaceFolders": "c:\\Users\\administrator\\Documents\\TDS\\Workspace\\CJOB;"
 	}
 }

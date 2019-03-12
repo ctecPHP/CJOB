@@ -52,6 +52,11 @@ T_PEDIDOITEM_SOBEL
 		Change query
 		Line 88, 141 e 195 - add column " ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA  "  foi adicionada.
 
+	## [0.0.1] - 11-03-2019
+	### Added 
+		Tratamendo da amarração de pedido de venda normal + bonificação
+		Criação das static functions que contemplam o a amarração.
+
 */ 
 
 
@@ -61,13 +66,24 @@ Private cAliasQr2 := GetNextAlias()
 Private aCabec 	:= {}
 Private aItens 	:= {}
 Private aLinha 	:= {}
-Private aPvBon  //array recebe NUMPEDIDOAFV de pedidos de bonificação
+Private aPvBon  := {}//array recebe NUMPEDIDOAFV de pedidos de bonificação
+Private aRes    := {}
+Private cVar    := '' 
 Private cDoc	:= ""
+Private cTpVen  := ''
 Private cNumAFV	:= ""
+Private nX      := 0
+Private nI      := 0
 Private cCamGrv := "ACACIA\ERRO"+"\PV_ERRO_"+ DTOS(DATE()) +"_"+ STRTRAN(TIME(),":","")+"_"
 Private cCamGr2 := "ACACIA\OK"+"\PV_"+ DTOS(DATE())+".LOG"	// +"_"+ STRTRAN(TIME(),":","")+"_"
 Private lOK	:= .F.
 Private nSecC6	:= 0
+
+//Debug 
+//Private cFileLog  := "ACACIA"+"\debug.log
+//Private cLogObj   := FCreate(cFileLog)
+
+
 /*
 cFileLog := "ACACIA\ERRO"+"\LOG_"+ DTOS(DATE()) +"_"+ STRTRAN(TIME(),":","") +".log"
 nFileLog :=  fCreate( cFileLog  )
@@ -89,7 +105,7 @@ cQuery += " Convert (Varchar, CAST(DATAENTREGA As date),112) XDATAENTREGA, "
 cQuery += " ISNULL(CODIGOCLIENTE ,'') CODIGOCLIENTE, ISNULL(LOJACLIENTE ,'') LOJACLIENTE, ISNULL(CODIGOCONDPAGTO ,'') CODIGOCONDPAGTO, "
 cQuery += " ISNULL(NUMPEDIDOAFV ,'') NUMPEDIDOAFV, ISNULL(VOLUME ,'') VOLUME, ISNULL(CODIGOVENDEDORESP ,'') CODIGOVENDEDORESP, "
 cQuery += " ISNULL(OBSERVACAOI ,'') OBS1, ISNULL(OBSERVACAOII ,'') OBS2,ISNULL(CODIGOUNIDFAT ,'') CODIGOUNIDFAT,  "
-cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA, ISNULL(CESP_NUMPEDIDOASSOC, '') NUMPVASSOC  "
+cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA, ISNULL(CESP_NUMPEDIDOASSOC, '') NUMPVASSOC, ISNULL(CODIGOTIPOPEDIDO ,'') CODTPPV "
 cQuery += " FROM T_PEDIDO_SOBEL SC5 "
 cQuery += " WHERE CODIGOUNIDFAT = '01' "
 cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
@@ -97,16 +113,17 @@ cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
 cQuery := ChangeQuery(cQuery)
 dbUseArea(.T., 'TOPCONN', TCGenQry(,,cQuery),cAliasQr1, .F., .T.)
 
-aPvBon := {} 
+
 While !(cAliasQr1)->(EOF())
 	lOK	:= .F.
 	cNumAFV	:= (cAliasQr1)->NUMPEDIDOAFV
 	cUniFat	:= (cAliasQr1)->CODIGOUNIDFAT
+	cTpVen  := Alltrim((cAliasQr1)->CODTPPV)
 	nSecC6	:= 0
 	
 	//Se bonificação - aPvBon recebe cNumAFV
-	If (cAliasQr1)->CODIGOTIPOPEDIDO == 'F'
-		AAdd( aPvBon, cNumAFV )
+	If cTpVen == 'F'
+		AAdd( aPvBon, cNumAFV )		
 	EndIf
 		
 
@@ -135,20 +152,24 @@ While !(cAliasQr1)->(EOF())
 	(cAliasQr1)->(DbSkip())
 EndDo
 (cAliasQr1)->(dbCloseArea())
-
-
+	
 	//Trata amarração dos pedidos normais com a bonificação
-	For nX:= 1 to Len(aPvBon)
-		aRes := getC5NumV( getPvAss(aPvBon[nX]) ) 
-		cVar := StrTran( StrTran( AsString( aRes ), '{', '' ), '}', '' )
+	If Len(aPvBon) > 0 			
+		For nX:= 1 to Len( aPvBon )
+			// Retorna array com pedidos de venda NORMAL associados a Bonificação
+			aRes := getC5NumV( getPvAss(aPvBon[nX]) ) 
+			// converte array para string no padrão C5_PEDBON
+			cVar := arrToStr( aRes ) 
+			//Grava em C5_PEDBON, string com 'lote' de pedidos associados a bonificação separados por virgula. 
+			setC5PedBon( getC5Num(aPvBon[nX]),  cVar) 
 
-		setC5PedBon( getC5Num(aPvBon[nX]),  cVar) 
-		For nI:= 1 to Len( aRes )
-			setC5PedBon( aRes[nI], aPvBon[nX] )
-		Next		
-	Next
-
-
+			//Grava C5_NUM Bonificação em cada pedido normal associado
+			For nI:= 1 to Len( aRes )
+				setC5PedBon( aRes[nI], getC5Num( aPvBon[nX]) )
+			Next		
+		Next
+	EndIf
+	
 If !(Type("oMainWnd")=="O")	  //Se via schedule
 	RESET ENVIRONMENT
 EndIf
@@ -164,7 +185,7 @@ cQuery += " Convert (Varchar, CAST(DATAENTREGA As date),112) XDATAENTREGA, "
 cQuery += " ISNULL(CODIGOCLIENTE ,'') CODIGOCLIENTE, ISNULL(LOJACLIENTE ,'') LOJACLIENTE, ISNULL(CODIGOCONDPAGTO ,'') CODIGOCONDPAGTO, "
 cQuery += " ISNULL(NUMPEDIDOAFV ,'') NUMPEDIDOAFV, ISNULL(VOLUME ,'') VOLUME, ISNULL(CODIGOVENDEDORESP ,'') CODIGOVENDEDORESP, "
 cQuery += " ISNULL(OBSERVACAOI ,'') OBS1, ISNULL(OBSERVACAOII ,'') OBS2,ISNULL(CODIGOUNIDFAT ,'') CODIGOUNIDFAT,  "
-cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA, ISNULL(CESP_NUMPEDIDOASSOC, '') NUMPVASSOC "
+cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA, ISNULL(CESP_NUMPEDIDOASSOC, '') NUMPVASSOC, ISNULL(CODIGOTIPOPEDIDO ,'') CODTPPV "
 cQuery += " FROM T_PEDIDO_SOBEL SC5 "
 cQuery += " WHERE CODIGOUNIDFAT = '02' "
 cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
@@ -172,16 +193,16 @@ cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
 cQuery := ChangeQuery(cQuery)
 dbUseArea(.T., 'TOPCONN', TCGenQry(,,cQuery),cAliasQr1, .F., .T.)
 
-aPvBon := {} 
 While !(cAliasQr1)->(EOF())
 	lOK	:= .F.
 	cNumAFV	:= (cAliasQr1)->NUMPEDIDOAFV
 	cUniFat	:= (cAliasQr1)->CODIGOUNIDFAT
+	cTpVen  := AllTrim( (cAliasQr1)->CODTPPV )
 	nSecC6	:= 0
 
 
 	//Se bonificação - aPvBon recebe cNumAFV
-	If (cAliasQr1)->CODIGOTIPOPEDIDO == 'F'
+	If cTpVen == 'F'
 		AAdd( aPvBon, cNumAFV )
 	EndIf
 		
@@ -213,17 +234,22 @@ EndDo
 (cAliasQr1)->(dbCloseArea())
 
 
-//Trata amarração dos pedidos normais com a bonificação
-	For nX:= 1 to Len(aPvBon)
-		aRes := getC5NumV( getPvAss(aPvBon[nX]) ) 
-		cVar := StrTran( StrTran( AsString( aRes ), '{', '' ), '}', '' )
+	//Trata amarração dos pedidos normais com a bonificação
+	If Len(aPvBon) > 0 			
+		For nX:= 1 to Len( aPvBon )
+			// Retorna array com pedidos de venda NORMAL associados a Bonificação
+			aRes := getC5NumV( getPvAss(aPvBon[nX]) ) 
+			// converte array para string no padrão C5_PEDBON
+			cVar := arrToStr( aRes ) 
+			//Grava em C5_PEDBON, string com 'lote' de pedidos associados a bonificação separados por virgula. 
+			setC5PedBon( getC5Num(aPvBon[nX]),  cVar) 
 
-		setC5PedBon( getC5Num(aPvBon[nX]),  cVar) 
-		For nI:= 1 to Len( aRes )
-			setC5PedBon( aRes[nI], aPvBon[nX] )
-		Next		
-	Next
-
+			//Grava C5_NUM Bonificação em cada pedido normal associado
+			For nI:= 1 to Len( aRes )
+				setC5PedBon( aRes[nI], getC5Num( aPvBon[nX]) )
+			Next		
+		Next
+	EndIf
 
 If !(Type("oMainWnd")=="O")	  //Se via schedule
 	RESET ENVIRONMENT
@@ -241,7 +267,7 @@ cQuery += " Convert (Varchar, CAST(DATAENTREGA As date),112) XDATAENTREGA, "
 cQuery += " ISNULL(CODIGOCLIENTE ,'') CODIGOCLIENTE, ISNULL(LOJACLIENTE ,'') LOJACLIENTE, ISNULL(CODIGOCONDPAGTO ,'') CODIGOCONDPAGTO, "
 cQuery += " ISNULL(NUMPEDIDOAFV ,'') NUMPEDIDOAFV, ISNULL(VOLUME ,'') VOLUME, ISNULL(CODIGOVENDEDORESP ,'') CODIGOVENDEDORESP, "
 cQuery += " ISNULL(OBSERVACAOI ,'') OBS1, ISNULL(OBSERVACAOII ,'') OBS2,ISNULL(CODIGOUNIDFAT ,'') CODIGOUNIDFAT,  "
-cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA, ISNULL(CESP_NUMPEDIDOASSOC, '') NUMPVASSOC "
+cQuery += " ISNULL(CODIGOTIPOPEDIDO ,'') CODIGOTIPOPEDIDO, ISNULL(ORDEMCOMPRA, '') ORDEMCOMPRA, ISNULL(CESP_NUMPEDIDOASSOC, '') NUMPVASSOC, ISNULL(CODIGOTIPOPEDIDO ,'') CODTPPV  "
 cQuery += " FROM T_PEDIDO_SOBEL SC5 "
 cQuery += " WHERE CODIGOUNIDFAT = '04' "
 cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
@@ -249,17 +275,16 @@ cQuery += " AND (DATAINTEGRACAOERP IS NULL OR DATAINTEGRACAOERP = '') "
 cQuery := ChangeQuery(cQuery)
 dbUseArea(.T., 'TOPCONN', TCGenQry(,,cQuery),cAliasQr1, .F., .T.)
 
-aPvBon := {} 
 While !(cAliasQr1)->(EOF())
 	lOK	:= .F.
 	cNumAFV	:= (cAliasQr1)->NUMPEDIDOAFV
 	cUniFat	:= (cAliasQr1)->CODIGOUNIDFAT
+	cTpVen  := Alltrim((cAliasQr1)->CODTPPV)
 	nSecC6	:= 0
 
-
 	//Se bonificação - aPvBon recebe cNumAFV
-	If (cAliasQr1)->CODIGOTIPOPEDIDO == 'F'
-		AAdd( aPvBon, cNumAFV )
+	If  cTpVen == 'F'
+		AAdd( aPvBon, cNumAFV )		
 	EndIf
 		
 		
@@ -290,16 +315,22 @@ EndDo
 (cAliasQr1)->(dbCloseArea())
 
 
-//Trata amarração dos pedidos normais com a bonificação
-	For nX:= 1 to Len(aPvBon)
-		aRes := getC5NumV( getPvAss(aPvBon[nX]) ) 
-		cVar := StrTran( StrTran( AsString( aRes ), '{', '' ), '}', '' )
+	//Trata amarração dos pedidos normais com a bonificação
+	If Len(aPvBon) > 0 			
+		For nX:= 1 to Len( aPvBon )
+			// Retorna array com pedidos de venda NORMAL associados a Bonificação
+			aRes := getC5NumV( getPvAss(aPvBon[nX]) ) 
+			// converte array para string no padrão C5_PEDBON
+			cVar := arrToStr( aRes ) 
+			//Grava em C5_PEDBON, string com 'lote' de pedidos associados a bonificação separados por virgula. 
+			setC5PedBon( getC5Num(aPvBon[nX]),  cVar) 
 
-		setC5PedBon( getC5Num(aPvBon[nX]),  cVar) 
-		For nI:= 1 to Len( aRes )
-			setC5PedBon( aRes[nI], aPvBon[nX] )
-		Next		
-	Next
+			//Grava C5_NUM Bonificação em cada pedido normal associado
+			For nI:= 1 to Len( aRes )
+				setC5PedBon( aRes[nI], getC5Num( aPvBon[nX]) )
+			Next		
+		Next
+	EndIf
 
 
 If !(Type("oMainWnd")=="O")	  //Se via schedule
@@ -599,4 +630,27 @@ static function getPvAss( cNumAFV )
 
     AFV->(DbCloseArea())
 	RestArea(aArea)	
+Return cResult
+
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} arrToStr
+    Converte Array para string - no formato a ser gravado em C5_PEDBON
+    na tabela SC5.
+@author  Ademilson Nunes
+@since   11/03/2019
+@version 12.0.0
+/*/
+//-------------------------------------------------------------------
+static function arrToStr( aResult )
+    Local cResult := ''
+
+    If len(aResult) <> 0 
+        cResult :=  AsString( aResult )         //Converte para string            
+        cResult :=  StrTran( cResult, '{', '' ) //Remove caracter especial do lado esquerdo
+        cResult :=  StrTran( cResult, '}', '' ) //Remove caracter especial do lado direito
+    else
+        cResult := ''
+    EndIf
+    
 Return cResult

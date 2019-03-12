@@ -12,6 +12,7 @@ description
 User Function AFV001()
     Local 	aTables := {"SC5"}
     Local   aResult := {'123456', '123456', '123456'}
+    Local   cResult := ''
     Local   nX      := 0
    // Local   cResult := ''
     //Private cFileLog  := "LOG"+"\RESULT.log"
@@ -27,11 +28,10 @@ User Function AFV001()
 
     //cResult := getPvAss('W1170303192203130')
 
-    cResult := StrTran( AsString( aResult ), '{', '' )
-    cResult := StrTran (cResult, '}', '')
+     cResult := arrToStr( aResult )
+
     
-    FWrite(cLogObj, 'Resultado: ' + 
-    )
+    FWrite(cLogObj, 'Resultado: ' + cResult)
 
 
     /*
@@ -161,4 +161,27 @@ static function getPvAss( cNumAFV )
 
     AFV->(DbCloseArea())
 	RestArea(aArea)	
+Return cResult
+
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} arrToStr
+    Converte Array para string - no formato a ser gravado em C5_PEDBON
+    na tabela SC5.
+@author  Ademilson Nunes
+@since   11/03/2019
+@version 12.0.0
+/*/
+//-------------------------------------------------------------------
+static function arrToStr( aResult )
+    Local cResult := ''
+
+    If len(aResult) <> 0 
+        cResult :=  AsString( aResult )         //Converte para string            
+        cResult :=  StrTran( cResult, '{', '' ) //Remove caracter especial do lado esquerdo
+        cResult :=  StrTran( cResult, '}', '' ) //Remove caracter especial do lado direito
+    else
+        cResult := ''
+    EndIf
+    
 Return cResult
