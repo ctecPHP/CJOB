@@ -573,8 +573,8 @@ Return Nil
 
 
 /*/{Protheus.doc} getC5NumV
-    Retorna um array com todos os pedidos de venda (C5_NUM), apartir de um lote ou um único NUMPEDIDOAFV
-	armazenado na coluna CESP_NUMPEDIDOASSOC
+    Retorna um array com todos os pedidos de venda (C5_NUM) a partir de um lote ou um único NUMPEDIDOAFV
+	armazenado na coluna CESP_NUMPEDIDOASSOC da tabela T_PEDIDO_SOBEL
     @type  Static Function
     @author Ademilson Nunes
     @since 07/03/2019
