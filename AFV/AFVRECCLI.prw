@@ -1,6 +1,6 @@
 #include 'totvs.ch'
 /*/{Protheus.doc} AFVRECCLI
-        Cadastro de novos clientes vindos do AFV Ac�cia 
+        Cadastra novos clientes vindos do AFV 'Acacia' 
     @type  Function
     @author Ademilson Nunes / Elvis Kinuta
     @since 14/03/2019
@@ -8,10 +8,13 @@
 /*/
 /*  TODO_LIST    
     	 
-        1 - Disparar e-mail para o departamento de TI com o conte�do do log em caso de erro.
+        1 - Disparar e-mail para o departamento de TI com o 
+		
+		conte�do do log em caso de erro.
 		2 - Disparar e-mail para financeiro/ 		
 */
 User Function AFVRECCLI()
+
 	Private	cFil 	  := "01"
 	Private cUser     := "Administrador"
 	Private cPsw      := "312rw218"
@@ -27,20 +30,36 @@ User Function AFVRECCLI()
 	Private cFileLog  := "ACACIA\CLIENTES"+"\ERRO_"+ DTOS(DATE()) +"_" + STRTRAN(TIME(),":","") + ".log"
 	
 	prepEnv( "01" )
-		aReg := findNewCli()			
+
+		aReg := findNewCli()
+
 	closeEnv() 
-	
+
+	//Conta número de novos registros em T_CLIENTENOVO_SOBEL 
 	nCount := Len(aReg[1])
+
 	If nCount > 0
-		For nX := 1 to nCount		
+
+		For nX := 1 to nCount	
+
+			// recebe PK da T_CLIENTENOVO_SOBEL
         	nSeq     := Val(aReg[1][nX])
+
+			// recebe unidade de faturamento - 01 - SOBEL | 02 - JMT | 04 - 3F
 			cUnidFat := cValToChar(aReg[2][nX])
 
-			prepEnv( cUnidFat )					
+			// prepara o ambiente de acordo com a empresa
+			prepEnv( cUnidFat )	
+				
+				// recebe coleção de dados para o novo registro
 				aResult := getNewCli( nSeq )				
-				recSA1( aResult, cUnidFat ) //call mata030		
-			closeEnv()	
-		Next 
+				// chama MSExecAuto - MATA030 - Cadastro de Clientes ( Tabela SA1 )
+				recSA1( aResult, cUnidFat ) 	
+
+			closeEnv()	// Desmonta ambiente
+
+		Next nX
+
 	EndIf
 	
 Return Nil
@@ -48,13 +67,17 @@ Return Nil
 
 //-------------------------------------------------------------------
 /*/{Protheus.doc} setA1Cod
-description
-@author  author
-@since   date
-@version version
+	Executa um UPDATE na tabela T_CLIENTENOVO_SOBEL, atualizando 
+	a coluna CODIGOERP do registro com o A1_COD gerado após gravação 
+	do cliente através da rotirna MATA030 via MSExecAuto e atualiza 
+	tambem a DATAINTEGRACAOERP e adiciona o valor '01' a coluna LOJACLIENTE.
+@author  Ademilson Nunes
+@since   16/03/2019
+@version 12.1.17
 /*/
 //-------------------------------------------------------------------
 Static Function setA1Cod( cCNPJ, cA1Cod )
+
 	Local cQry := ''
 
 	cQry := " UPDATE T_CLIENTENOVO_SOBEL " 
@@ -62,6 +85,7 @@ Static Function setA1Cod( cCNPJ, cA1Cod )
 	cQry += " CODIGOERP = '"  + cA1Cod + "', "
 	cQry += " LOJACLIENTE = '01' "
 	cQry += " WHERE  CNPJ = '" + cCNPJ + "' "
+
 	TCSqlExec(cQry)
 
 Return Nil
@@ -76,20 +100,25 @@ description
 /*/
 //-------------------------------------------------------------------
 Static Function getA1Cod( cCNPJ )
+
 	Local aArea   := GetArea()
 	Local cResult := ''
 
 	BeginSQL Alias 'AFV'
+
 		SELECT A1_COD 
 		FROM %table:SA1% SA1 
 		WHERE 
 		A1_CGC = %Exp:cCNPJ%
-		AND SA1.%notDel%			
+		AND SA1.%notDel%	
+
 	EndSQL
 
 	While !AFV->(EoF())
+
 		cResult := AllTrim(cValtoChar( AFV->A1_COD ))
 		AFV->(DbSkip())
+
 	End
 
 	AFV->(DbCloseArea())
@@ -123,12 +152,14 @@ description
 /*/
 //-------------------------------------------------------------------
 Static Function closeEnv()
+
 	RpcClearEnv()
+
 Return Nil
 
 
 /*/{Protheus.doc} findNewCli
-    (long_description)
+    (long_description
     @type  Static Function
     @author  Ademilson Nunes / Elvis Kinuta
     @since date
@@ -136,24 +167,32 @@ Return Nil
     @return return, return_type, return_description
     /*/
 Static Function findNewCli()
+
 	Local aArea   := GetArea()
 	Local aResult := {}
 	Local aReg    := {}
 	Local aEmp    := {}	
 
 	BeginSQL Alias 'AFV'
+
 		SELECT SEQUENCIA,
 	   		   CODIGOUNIDFAT
         FROM T_CLIENTENOVO_SOBEL
 		WHERE DATAINTEGRACAOERP IS NULL 
 		AND CODIGOERP IS NULL
 		ORDER BY CODIGOUNIDFAT	
+
 	EndSQL
 
 	While !(AFV->(EoF()))
+
+		// PK  T_CLIENTENOVO_SOBEL
 		AAdd( aReg, AllTrim(cValToChar(AFV->SEQUENCIA)) ) 
+		// CODIGOUNIDFAT - 01 - SOBEL | 02 - JMT | 04 - 3F
 		AAdd( aEmp, AllTrim(AFV->CODIGOUNIDFAT) )
+
 		AFV->(DbSkip())
+
 	End
 
 	AAdd( aResult, aReg )
@@ -166,19 +205,21 @@ Return aResult
 
 
 /*/{Protheus.doc} getNewCli
-    (long_description)
+	Retorna coleção de dados da tabela T_NOVOCLIENTE_SOBEL para registro de novos clientes
     @type  Static Function
     @author  Ademilson Nunes / Elvis Kinuta
-    @since date
-    @version version    
-	@param cSeq, caracter, c�digo do cliente na tabela interm�diaria (pr� cadastro)
-    @return return, return_type, return_description
+    @since 16/03/2019
+    @version 12.1.17    
+	@param nSeq, numerico, PK do registro solicitado
+    @return aResult, array, coleção de dados para MSExecAuto.
     /*/
 Static Function getNewCli( nSeq )
+
   	Local aArea   := GetArea()
 	Local aResult := {}	
 
     BeginSQL Alias 'AFV'
+
         SELECT	ISNULL(CESP_CODIGOIBGE   , '')  AS CESP_CODIGOIBGE   ,
 		        ISNULL(CODIGOUNIDFAT     , '')  AS CODIGOUNIDFAT     ,
 		        ISNULL(LOJACLIENTE       , '')  AS LOJACLIENTE       ,
@@ -199,10 +240,12 @@ Static Function getNewCli( nSeq )
         FROM T_CLIENTENOVO_SOBEL
         WHERE SEQUENCIA = %Exp:nSeq%
         AND DATAINTEGRACAOERP IS NULL 
-		AND CODIGOERP IS NULL		
+		AND CODIGOERP IS NULL
+				
     EndSQL
 
     While !(AFV->(EoF()))
+
         aResult :={{"A1_LOJA"    ,'01'                   ,Nil},;
 	               {"A1_NOME"    ,AFV->RAZAOSOCIAL       ,Nil},;
 	               {"A1_ZZCNOME" ,AFV->RAZAOSOCIAL       ,Nil},;
@@ -232,11 +275,13 @@ Static Function getNewCli( nSeq )
 				   {"A1_MSBLQL"  ,"1"				     ,Nil},; 
 	               {"A1_TEL"     ,AFV->TELEFONE			 ,Nil},;
 	               {"A1_ZZBOL"   ,"N"					 ,Nil}} 
+
 			AFV->(DbSkip())		
     End
 
 	AFV->(DbCloseArea())
-	RestArea(aArea)		 
+	RestArea(aArea)		
+
 Return aResult
 
 
@@ -244,11 +289,15 @@ Return aResult
 /*/{Protheus.doc} recSA1
 	Chama MSExecAuto para MATA030 (cadastro de cliente)
 @author  Ademilson Nunes / Elvis Kinuta
+@param aResult, array, matriz SA1
+@param cUniFat, caracter, código da empresa (unidade de faturamento)
+	   01 - SOBEL | 02 - JMT | 04 - 3F	   
 @since   14/03/2019
 @version 12.1.17
 /*/
 //-------------------------------------------------------------------
 Static Function recSA1( aResult, cUniFat )
+
 	Private lMsErroAuto    := .F.	
 	Private lMsHelpAuto    := .T.
 	Private lAutoErrNoFile := .T.
@@ -260,29 +309,39 @@ Static Function recSA1( aResult, cUniFat )
 		MSExecAuto( {|x,y| Mata030(x,y)}, aResult, 3 )
 
 		If ! lMsErroAuto
+
 			ConfirmSx8()	
-			cCNPJ   := cValToChar(aResult[14][2])								
-			setA1Cod( cCNPJ, getA1Cod(cCNPJ) ) //Faz update dos dados na tabela intermedi�ria							
+			// Recebe cnpj do cliente em sua posição dentro do array (Linha 14 - Coluna 02)
+			cCNPJ   := cValToChar(aResult[14][2])	
+
+			// Grava A1_COD do registro na tabela T_CLIENTENOVO_SOBEL
+			setA1Cod( cCNPJ, getA1Cod(cCNPJ) )						
 			//Enviar e-mail
+
 		Else
+
 			RollbackSx8()
 			//MostraErro()
              
-			//Grava��o do Log 
+			// Cria arquivo de Log 
 			oLog   := FCreate(cFileLog)
+
+			// recebe array com erros durante a tentativa de execução da MATA030 
 			aError := GetAutoGRLog()
+
 			cRet   := 'LOG	- ' + DtoC(dDataBase) + " " + Time() + Chr(13) + Chr(10) 
-			cRet   := 'ERRO - EMPRESA -' + cUniFat + Chr(13) + Chr(10)			
+			cRet   := 'ERRO - EMPRESA -' + cUniFat + Chr(13) + Chr(10)	
+
+			// Desmonta array de erros linha a linha em uma string
             For nX := 1 To Len(aError) 
+
                 cRet += aError[nX] + Chr(13) + Chr(10)
-            Next 
+
+            Next nX
+
+			/* Escreve log de erros */ 
 			FWrite(oLog,  cRet)	
 
-			 u_envemail("assistente_ti@sobelsuprema.com.br",; //remet
-			 			"assistente_ti@sobelsuprema.com.br",; //dest
-						"jcsilva@sobelsuprema.com.br",; //cc
-						 "",; //cco
-						 "Error.log AFV", cRet)
 		
 		EndIf
 
