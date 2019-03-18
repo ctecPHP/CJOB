@@ -587,8 +587,8 @@ static function getC5NumV( cNumPvAss )
     Local nX      := 0
     
     //No minimo 2 pedidos vindos do tablet concatenados por ,
-    If ',' $ cNumPvAss .And. Len( cNumPvAss ) >= 27
-            aVetor := Strtokarr( cNumPvAss, ',' ) 
+    If ';' $ cNumPvAss .And. Len( cNumPvAss ) >= 27
+            aVetor := Strtokarr( cNumPvAss, ';' ) 
             If Len(aVetor) <> 0
                 For nX:= 1 to Len(aVetor)
                     AAdd( aResult, getC5Num(cValToChar(aVetor[nX]) ) )

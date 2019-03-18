@@ -1,19 +1,12 @@
 #include 'totvs.ch'
-/*/{Protheus.doc} AFVRECCLI
+/*/{Protheus.doc} SFACA002
         Cadastra novos clientes vindos do AFV 'Acacia' 
     @type  Function
     @author Ademilson Nunes / Elvis Kinuta
     @since 14/03/2019
     @version 12.1.17
 /*/
-/*  TODO_LIST    
-    	 
-        1 - Disparar e-mail para o departamento de TI com o 
-		
-		conteï¿½do do log em caso de erro.
-		2 - Disparar e-mail para financeiro/ 		
-*/
-User Function AFVRECCLI()
+User Function SFACA002()
 
 	Private	cFil 	  := "01"
 	Private cUser     := "Administrador"
@@ -35,7 +28,7 @@ User Function AFVRECCLI()
 
 	closeEnv() 
 
-	//Conta nÃºmero de novos registros em T_CLIENTENOVO_SOBEL 
+	//Conta número de novos registros em T_CLIENTENOVO_SOBEL 
 	nCount := Len(aReg[1])
 
 	If nCount > 0
@@ -51,7 +44,7 @@ User Function AFVRECCLI()
 			// prepara o ambiente de acordo com a empresa
 			prepEnv( cUnidFat )	
 				
-				// recebe coleÃ§Ã£o de dados para o novo registro
+				// recebe coleção de dados para o novo registro
 				aResult := getNewCli( nSeq )				
 				// chama MSExecAuto - MATA030 - Cadastro de Clientes ( Tabela SA1 )
 				recSA1( aResult, cUnidFat ) 	
@@ -68,8 +61,8 @@ Return Nil
 //-------------------------------------------------------------------
 /*/{Protheus.doc} setA1Cod
 	Executa um UPDATE na tabela T_CLIENTENOVO_SOBEL, atualizando 
-	a coluna CODIGOERP do registro com o A1_COD gerado apÃ³s gravaÃ§Ã£o 
-	do cliente atravÃ©s da rotirna MATA030 via MSExecAuto e atualiza 
+	a coluna CODIGOERP do registro com o A1_COD gerado após gravação 
+	do cliente através da rotirna MATA030 via MSExecAuto e atualiza 
 	tambem a DATAINTEGRACAOERP e adiciona o valor '01' a coluna LOJACLIENTE.
 @author  Ademilson Nunes
 @since   16/03/2019
@@ -95,8 +88,8 @@ Return Nil
 /*/{Protheus.doc} getA1Cod
 description
 @author  Ademilson Nunes
-@since   date
-@version version
+@since   18/03/2019
+@version 12.1.17
 /*/
 //-------------------------------------------------------------------
 Static Function getA1Cod( cCNPJ )
@@ -130,9 +123,10 @@ Return cResult
 //-------------------------------------------------------------------
 /*/{Protheus.doc} prepEnv
 description
-@author  author
-@since   date
-@version version
+@author  Ademilson Nunes
+@since   15/03/2019
+@version 12.1.17
+@param cEmp, caracter, código da empresa 01 - SOBEL | 02 - JMT | 04 - 3F
 /*/
 //-------------------------------------------------------------------
 Static Function prepEnv( cEmp )
@@ -146,9 +140,9 @@ Return Nil
 //-------------------------------------------------------------------
 /*/{Protheus.doc} closeEnv
 description
-@author  author
-@since   date
-@version version
+@author  Ademilson Nunes 
+@since   15/03/2019
+@version 12.1.17
 /*/
 //-------------------------------------------------------------------
 Static Function closeEnv()
@@ -205,13 +199,13 @@ Return aResult
 
 
 /*/{Protheus.doc} getNewCli
-	Retorna coleÃ§Ã£o de dados da tabela T_NOVOCLIENTE_SOBEL para registro de novos clientes
+	Retorna coleção de dados da tabela T_NOVOCLIENTE_SOBEL para registro de novos clientes
     @type  Static Function
     @author  Ademilson Nunes / Elvis Kinuta
     @since 16/03/2019
     @version 12.1.17    
 	@param nSeq, numerico, PK do registro solicitado
-    @return aResult, array, coleÃ§Ã£o de dados para MSExecAuto.
+    @return aResult, array, coleção de dados para MSExecAuto.
     /*/
 Static Function getNewCli( nSeq )
 
@@ -290,7 +284,7 @@ Return aResult
 	Chama MSExecAuto para MATA030 (cadastro de cliente)
 @author  Ademilson Nunes / Elvis Kinuta
 @param aResult, array, matriz SA1
-@param cUniFat, caracter, cÃ³digo da empresa (unidade de faturamento)
+@param cUniFat, caracter, código da empresa (unidade de faturamento)
 	   01 - SOBEL | 02 - JMT | 04 - 3F	   
 @since   14/03/2019
 @version 12.1.17
@@ -303,20 +297,24 @@ Static Function recSA1( aResult, cUniFat )
 	Private lAutoErrNoFile := .T.
 	Private aError      := {}
 	Private cRet        := ''
+	Private cRetHtml    := ''
 	Private nX          := 0
 	Private oLog 
+	Private cEmailTI    := 'assistente_ti@sobelsuprema.com.br;jcsilva@sobelsuprema.com.br'
+	Private cEmailFin   := 'assistente_ti@sobelsuprema.com.br' //Coletar e-mail do responsável
 	
 		MSExecAuto( {|x,y| Mata030(x,y)}, aResult, 3 )
 
 		If ! lMsErroAuto
 
 			ConfirmSx8()	
-			// Recebe cnpj do cliente em sua posiÃ§Ã£o dentro do array (Linha 14 - Coluna 02)
+			// Recebe cnpj do cliente em sua posição dentro do array (Linha 14 - Coluna 02)
 			cCNPJ   := cValToChar(aResult[14][2])	
 
 			// Grava A1_COD do registro na tabela T_CLIENTENOVO_SOBEL
 			setA1Cod( cCNPJ, getA1Cod(cCNPJ) )						
 			//Enviar e-mail
+			u_FBEMail( cEmailFin, 'Novo Cliente cadastrado', mountMsg( aResult, cUniFat ))
 
 		Else
 
@@ -326,23 +324,208 @@ Static Function recSA1( aResult, cUniFat )
 			// Cria arquivo de Log 
 			oLog   := FCreate(cFileLog)
 
-			// recebe array com erros durante a tentativa de execuÃ§Ã£o da MATA030 
+			// recebe array com erros durante a tentativa de execução da MATA030 
 			aError := GetAutoGRLog()
 
 			cRet   := 'LOG	- ' + DtoC(dDataBase) + " " + Time() + Chr(13) + Chr(10) 
-			cRet   := 'ERRO - EMPRESA -' + cUniFat + Chr(13) + Chr(10)	
+			cRet   += 'ERRO - EMPRESA -' + cUniFat + Chr(13) + Chr(10)	
+
+			cRetHtml :=	'LOG	- ' + DtoC(dDataBase) + " " + Time() + "<br>"
+			cRetHtml += 'ERRO - EMPRESA -' + cUniFat + "<br>"
 
 			// Desmonta array de erros linha a linha em uma string
             For nX := 1 To Len(aError) 
 
-                cRet += aError[nX] + Chr(13) + Chr(10)
+                cRet     += aError[nX] + Chr(13) + Chr(10)
+				cRetHtml +=	aError[nX] + '<br>'		
 
             Next nX
 
 			/* Escreve log de erros */ 
 			FWrite(oLog,  cRet)	
 
+			/* Envia e-mail de log para o TI */ 	
+			u_FBEMail( cEmailTI, 'Error-Log-AFV',  cRetHtml )
 		
 		EndIf
 
 Return Nil
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} getNomeVen
+	Retorna Nome do vendedor a partir do código (A3_COD)
+@author  Ademilson Nunes
+@since   15/03/2019
+@version 12.1.17
+@param cCodVen, caracter, código do vendedor (A2_COD)
+@return cResult, caracter, nome do vendedor (A3_NOME)
+/*/
+//-------------------------------------------------------------------
+Static Function getNomeVen( cCodVen )
+
+	Local aArea   := GetArea()
+	Local cResult := ''
+
+	cCodVen := AllTrim(cCodVen)
+
+	BeginSQL Alias 'TBL'
+
+		SELECT A3_NOME 
+		FROM %table:SA3% SA3 
+		WHERE 
+		A3_COD = %Exp:cCodVen%
+		AND SA3.%notDel%	
+
+	EndSQL
+
+	While !TBL->(EoF())
+
+		cResult := AllTrim(cValtoChar( TBL->A3_NOME ))
+		TBL->(DbSkip())
+
+	End
+
+	TBL->(DbCloseArea())
+	RestArea(aArea)	  
+
+Return cResult
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} mountMsg
+	Monta conteúdo da msg em HTML para envio de e-mail
+@author  Ademilson Nunes
+@since   17/03/2019
+@version 12.1.17
+@param aResult, array, coleção de dados com registro a ser armazenado em SA1
+@param cUniFat, caracter, código da empresa 01 - SOBEL | 02 - JMT | 04 - 3F	   
+/*/
+//-------------------------------------------------------------------
+Static Function mountMsg( aResult, cUniFat )
+	
+	Local cMsg      := ''
+	Local cEmp      := getEmpName(cUniFat)	
+	Local cCNPJ     := cValtoChar(aResult[14][02])
+	Local cCodSA1   := getA1Cod(cCNPJ)
+    Local cCodVen   := cValToChar(aResult[19][02])
+	Local cNomeVen  := getNomeVen(cCodVen)
+	Local cRzSocial := cValToChar(aResult[02][02])
+	Local cNomeRed  := cValToChar(aResult[05][02])
+	Local cIE       := cValToChar(aResult[16][02])
+	Local cEnder    := cValToChar(aResult[07][02])
+	Local cUF       := cValToChar(aResult[08][02])
+	Local cCidade   := cValToChar(aResult[10][02])
+	Local cBairro   := cValToChar(aResult[11][02])
+	Local cCep      := cValToChar(aResult[12][02])
+	Local cEmail    := cValToChar(aResult[17][02])
+	Local cTel      := cValToChar(aResult[26][02]) + " " + cValToChar(aResult[28][02])        
+
+	cMsg := '<!DOCTYPE html>'
+	cMsg += '<html>'
+	cMsg += '<head>'
+	cMsg += '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">'
+	cMsg += '<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>'
+	cMsg += '<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>'
+	cMsg += '<title>Relatorio</title>'
+    cMsg += '</head>'
+	cMsg += '<body>'
+	cMsg += '<table class="table">'
+	cMsg += '<tr>'
+	cMsg += '<td colspan="2" align="center"><b>Novo cliente cadastrado</b></td>'
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg += '<td><b>Empresa</b></td>'
+	cMsg +=	'<td>' + cEmp + '</td>'
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg += '<td><b>Cod.Protheus</b></td>'
+	cMsg += '<td>' + cCodSA1 + '</td>'	
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg += '<td><b>Cod. Vend.</b></td>'
+	cMsg += '<td>' + cCodVen + '</td>'
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg += '<td><b>Nome Vend.</b></td>'
+	cMsg += '<td>' + cNomeVen + '</td>'
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg +=' <td><b>Razao Social</b></td>'
+	cMsg += '<td>' + cRzSocial + '</td>'
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg += '<td><b>Nome Reduz.</b></td>'
+	cMsg += '<td>' + cNomeRed + '</td>'
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg += '<td><b>CNPJ</b></td>'
+	cMsg += '<td>' + cCNPJ + '</td>'
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg += '<td><b>IE</b></td>'
+	cMsg += '<td>' + cIE + '</td>'
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg += '<td><b>Ender.</b></td>'
+	cMsg += '<td>' + cEnder + '</td>'
+	cMsg +=	'</tr>'
+	cMsg += '<tr>'
+	cMsg +=	'<td><b>UF</b></td>'
+	cMsg += '<td>' + cUF + '</td>'
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg += '<td><b>Cidade</b></td>'
+	cMsg += '<td>' + cCidade + '</td>'
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg += '<td><b>Bairro</b></td>'
+	cMsg += '<td>' + cBairro + '</td>'
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg += '<td><b>CEP</b></td>'
+	cMsg += '<td>' + cCep + '</td>'
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg += '<td><b>E-mail</b></td>'
+	cMsg += '<td>' + cEmail + '</td>'
+	cMsg += '</tr>'
+	cMsg += '<tr>'
+	cMsg += '<td><b>Tel.:</b></td>'
+	cMsg += '<td>' + cTel + '</td>'
+	cMsg += '</tr>'					
+	cMsg += '</table>'
+    cMsg += '</body>'
+    cMsg += '</html>'
+
+Return cMsg
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} getEmpName
+	Retorna 'Nome unidade de faturamento'
+@author  Ademilson
+@since   18/03/2019
+@version 12.1.17
+@param cUniFat, caracter, código unidade de faturamento.
+@return cEmp, caracter, nome empresa.
+/*/
+//-------------------------------------------------------------------
+Static Function getEmpName( cUniFat )
+
+	Local cEmp := ''
+
+	If cUniFat == '01'
+
+		cEmp := 'SOBEL'
+
+	ElseIf cUniFat == '02'
+		
+		cEmp := 'JMT'
+	ElseIf cUniFat == '04'	
+
+		cEmp := '3F'
+	Else
+
+		cEmp := ''
+
+	EndIf	
+
+Return cEmp
