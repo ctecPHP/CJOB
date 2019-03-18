@@ -22,6 +22,7 @@ User Function SFACA002()
 	Private cA1Cod    := ''
 	Private cFileLog  := "ACACIA\CLIENTES"+"\ERRO_"+ DTOS(DATE()) +"_" + STRTRAN(TIME(),":","") + ".log"
 	
+	//Prepara ambiente SOBEL para coletar possíveis novos registros 
 	prepEnv( "01" )
 
 		aReg := findNewCli()
@@ -47,7 +48,7 @@ User Function SFACA002()
 				// recebe coleção de dados para o novo registro
 				aResult := getNewCli( nSeq )				
 				// chama MSExecAuto - MATA030 - Cadastro de Clientes ( Tabela SA1 )
-				recSA1( aResult, cUnidFat ) 	
+				recSA1( aResult, cUnidFat, nSeq ) 	
 
 			closeEnv()	// Desmonta ambiente
 
@@ -286,11 +287,12 @@ Return aResult
 @param aResult, array, matriz SA1
 @param cUniFat, caracter, código da empresa (unidade de faturamento)
 	   01 - SOBEL | 02 - JMT | 04 - 3F	   
+@param nSeq, numérico, PK T_CLIENTENOVO_SOBEL	   
 @since   14/03/2019
 @version 12.1.17
 /*/
 //-------------------------------------------------------------------
-Static Function recSA1( aResult, cUniFat )
+Static Function recSA1( aResult, cUniFat, nSeq  )
 
 	Private lMsErroAuto    := .F.	
 	Private lMsHelpAuto    := .T.
@@ -301,7 +303,7 @@ Static Function recSA1( aResult, cUniFat )
 	Private nX          := 0
 	Private oLog 
 	Private cEmailTI    := 'assistente_ti@sobelsuprema.com.br;jcsilva@sobelsuprema.com.br'
-	Private cEmailFin   := 'assistente_ti@sobelsuprema.com.br' //Coletar e-mail do responsável
+	Private cEmailFin   := 'assistente_ti@sobelsuprema.com.br;admvendas@sobelsuprema.com.br;jcsilva@sobelsuprema.com.br' //Coletar e-mail da Adriana
 	
 		MSExecAuto( {|x,y| Mata030(x,y)}, aResult, 3 )
 
@@ -344,12 +346,78 @@ Static Function recSA1( aResult, cUniFat )
 			/* Escreve log de erros */ 
 			FWrite(oLog,  cRet)	
 
-			/* Envia e-mail de log para o TI */ 	
-			u_FBEMail( cEmailTI, 'Error-Log-AFV',  cRetHtml )
+			/* Envia e-mail de log para o TI */ 			
+			//Verifica se MSGIMPORTACAO do registro está NULL
+			If getMSGCli( nSeq ) <> ''
+
+				setMSGCli( nSeq, cRet )
+				u_FBEMail( cEmailTI, 'Error-Log-AFV',  cRetHtml )
+
+			EndIf
+			
 		
 		EndIf
 
 Return Nil
+
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} setMSGCli
+	Grava MSGIMPORTACAO na tabela T_CLIENTENOVO_SOBEL
+@author  Ademilson Nunes
+@since   18/03/2019
+@version 12.1.17
+@param nSeq, númerico, PK T_CLIENTENOVO_SOBEL
+@param cMsg, caracter, mensagem a ser gravada no campo
+/*/
+//-------------------------------------------------------------------
+Static Function setMSGCli( nSeq, cMsg )
+	
+	Local cQry := ""
+		  cQry := " UPDATE T_CLIENTENOVO_SOBEL "
+		  cQry += " SET MSGIMPORTACAO ='" + cMsg + "'"
+		  cQry += " WHERE SEQUENCIA = " + nSeq
+
+   TCSqlExec(cQry)
+
+Return Nil
+
+
+//-------------------------------------------------------------------
+/*/{Protheus.doc} getMSGCli
+	retornar conteúdo de MSGIMPORTACAO
+@author  Ademilson Nunes 
+@since   18/03/2019
+@version 12.1.17
+@param nSeq, númerico, PK T_CLIENTENOVO_SOBEL
+@return cResult, caracter, msgimportação gravada no registro
+/*/
+//-------------------------------------------------------------------
+Static Function getMSGCli( nSeq )
+
+	Local aArea   := GetArea()
+	Local cResult := ''
+
+	BeginSQL Alias 'AFV'
+
+		SELECT MSGIMPORTACAO
+		FROM T_CLIENTENOVO_SOBEL
+		WHERE SEQUENCIA = %Exp:nSeq%
+
+	EndSQL
+
+	While !(AFV->(EoF()))
+
+		cResult := AFV->MSGIMPORTACAO
+	    AFV->(DbSkip())
+
+	End
+
+	AFV->(DbCloseArea())
+	RestArea(aArea)
+
+Return cResult
+
 
 //-------------------------------------------------------------------
 /*/{Protheus.doc} getNomeVen
