@@ -175,6 +175,7 @@ Static Function findNewCli()
         FROM T_CLIENTENOVO_SOBEL
 		WHERE DATAINTEGRACAOERP IS NULL 
 		AND CODIGOERP IS NULL
+		AND  D_E_L_E_T_ <> '*'
 		ORDER BY CODIGOUNIDFAT	
 
 	EndSQL
@@ -300,6 +301,7 @@ Static Function recSA1( aResult, cUniFat, nSeq  )
 	Private aError      := {}
 	Private cRet        := ''
 	Private cRetHtml    := ''
+	Private cErroMsg    := ''
 	Private nX          := 0
 	Private oLog 
 	Private cEmailTI    := 'assistente_ti@sobelsuprema.com.br;jcsilva@sobelsuprema.com.br'
@@ -348,14 +350,17 @@ Static Function recSA1( aResult, cUniFat, nSeq  )
 
 			/* Envia e-mail de log para o TI */ 			
 			//Verifica se MSGIMPORTACAO do registro está NULL
-			If getMSGCli( nSeq ) <> ''
+			If getMSGCli( nSeq ) == '' 
 
-				setMSGCli( nSeq, cRet )
+				// retorna motido do erro recebido via GetAutoGRLog()
+				cErroMsg := AllTrim( cValToChar(aError[1]) )
+				// grava motivo do erro em MSGIMPORTACAO
+				setMSGCli( nSeq,  cErroMsg ) 
+				// Envia e-mail com conteúdo do log
 				u_FBEMail( cEmailTI, 'Error-Log-AFV',  cRetHtml )
 
 			EndIf
-			
-		
+					
 		EndIf
 
 Return Nil
@@ -373,11 +378,11 @@ Return Nil
 //-------------------------------------------------------------------
 Static Function setMSGCli( nSeq, cMsg )
 	
-	Local cQry := ""
+	Local cQry := ''
 		  cQry := " UPDATE T_CLIENTENOVO_SOBEL "
 		  cQry += " SET MSGIMPORTACAO ='" + cMsg + "'"
-		  cQry += " WHERE SEQUENCIA = " + nSeq
-
+		  cQry += " WHERE SEQUENCIA = " + Str(nSeq) 
+		   
    TCSqlExec(cQry)
 
 Return Nil
@@ -396,25 +401,25 @@ Return Nil
 Static Function getMSGCli( nSeq )
 
 	Local aArea   := GetArea()
-	Local cResult := ''
+	Local cResult := ''	
 
 	BeginSQL Alias 'AFV'
-
-		SELECT MSGIMPORTACAO
+		SELECT SEQUENCIA,
+	   		   ISNULL(MSGIMPORTACAO, '') AS MSGIMP
 		FROM T_CLIENTENOVO_SOBEL
-		WHERE SEQUENCIA = %Exp:nSeq%
-
+		WHERE
+		SEQUENCIA = %Exp:nSeq%	   		
 	EndSQL
 
-	While !(AFV->(EoF()))
+	While !AFV->(EoF())
 
-		cResult := AFV->MSGIMPORTACAO
-	    AFV->(DbSkip())
+		cResult := AllTrim( AFV->MSGIMP )
+		AFV->(DbSkip())
 
 	End
 
 	AFV->(DbCloseArea())
-	RestArea(aArea)
+	RestArea(aArea)	  
 
 Return cResult
 
@@ -591,7 +596,7 @@ Static Function getEmpName( cUniFat )
 
 		cEmp := '3F'
 	Else
-
+	
 		cEmp := ''
 
 	EndIf	

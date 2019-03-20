@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>2wp</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.dltk.core.scriptbuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>br.com.totvs.tds.TotvsNature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>Faturamento/nfe/danfeii.prw</name>
+			<type>1</type>
+			<location>D:/TOTVS/PROJETOS1/2wp/Faturamento/nfe/danfeii.prw</location>
+		</link>
+		<link>
+			<name>Faturamento/nfe/nfesefaz.prw</name>
+			<type>1</type>
+			<location>D:/TOTVS/PROJETOS1/2wp/Faturamento/nfe/nfesefaz.prw</location>
+		</link>
+	</linkedResources>
+</projectDescription>
