@@ -33,12 +33,9 @@ User Function SFACA002()
 	nCount := Len(aReg[1])
 
 	If nCount > 0
-
 		For nX := 1 to nCount	
-
 			// recebe PK da T_CLIENTENOVO_SOBEL
-        	nSeq     := Val(aReg[1][nX])
-
+        	nSeq     := Val(aReg[1][nX])			
 			// recebe unidade de faturamento - 01 - SOBEL | 02 - JMT | 04 - 3F
 			cUnidFat := cValToChar(aReg[2][nX])
 
@@ -51,9 +48,7 @@ User Function SFACA002()
 				recSA1( aResult, cUnidFat, nSeq ) 	
 
 			closeEnv()	// Desmonta ambiente
-
 		Next nX
-
 	EndIf
 	
 Return Nil
@@ -109,10 +104,8 @@ Static Function getA1Cod( cCNPJ )
 	EndSQL
 
 	While !AFV->(EoF())
-
 		cResult := AllTrim(cValtoChar( AFV->A1_COD ))
 		AFV->(DbSkip())
-
 	End
 
 	AFV->(DbCloseArea())
@@ -175,20 +168,17 @@ Static Function findNewCli()
         FROM T_CLIENTENOVO_SOBEL
 		WHERE DATAINTEGRACAOERP IS NULL 
 		AND CODIGOERP IS NULL
-		AND  D_E_L_E_T_ <> '*'
+		AND  D_E_L_E_T_ IS NULL
 		ORDER BY CODIGOUNIDFAT	
 
 	EndSQL
 
 	While !(AFV->(EoF()))
-
 		// PK  T_CLIENTENOVO_SOBEL
 		AAdd( aReg, AllTrim(cValToChar(AFV->SEQUENCIA)) ) 
 		// CODIGOUNIDFAT - 01 - SOBEL | 02 - JMT | 04 - 3F
 		AAdd( aEmp, AllTrim(AFV->CODIGOUNIDFAT) )
-
 		AFV->(DbSkip())
-
 	End
 
 	AAdd( aResult, aReg )
@@ -310,24 +300,19 @@ Static Function recSA1( aResult, cUniFat, nSeq  )
 		MSExecAuto( {|x,y| Mata030(x,y)}, aResult, 3 )
 
 		If ! lMsErroAuto
-
 			ConfirmSx8()	
 			// Recebe cnpj do cliente em sua posição dentro do array (Linha 14 - Coluna 02)
 			cCNPJ   := cValToChar(aResult[14][2])	
-
 			// Grava A1_COD do registro na tabela T_CLIENTENOVO_SOBEL
 			setA1Cod( cCNPJ, getA1Cod(cCNPJ) )						
 			//Enviar e-mail
 			u_FBEMail( cEmailFin, 'Novo Cliente cadastrado', mountMsg( aResult, cUniFat ))
-
 		Else
-
 			RollbackSx8()
 			//MostraErro()
              
 			// Cria arquivo de Log 
 			oLog   := FCreate(cFileLog)
-
 			// recebe array com erros durante a tentativa de execução da MATA030 
 			aError := GetAutoGRLog()
 
@@ -339,10 +324,8 @@ Static Function recSA1( aResult, cUniFat, nSeq  )
 
 			// Desmonta array de erros linha a linha em uma string
             For nX := 1 To Len(aError) 
-
                 cRet     += aError[nX] + Chr(13) + Chr(10)
 				cRetHtml +=	aError[nX] + '<br>'		
-
             Next nX
 
 			/* Escreve log de erros */ 
@@ -351,16 +334,13 @@ Static Function recSA1( aResult, cUniFat, nSeq  )
 			/* Envia e-mail de log para o TI */ 			
 			//Verifica se MSGIMPORTACAO do registro está NULL
 			If getMSGCli( nSeq ) == '' 
-
 				// retorna motido do erro recebido via GetAutoGRLog()
 				cErroMsg := AllTrim( cValToChar(aError[1]) )
 				// grava motivo do erro em MSGIMPORTACAO
 				setMSGCli( nSeq,  cErroMsg ) 
 				// Envia e-mail com conteúdo do log
 				u_FBEMail( cEmailTI, 'Error-Log-AFV',  cRetHtml )
-
-			EndIf
-					
+			EndIf					
 		EndIf
 
 Return Nil
@@ -586,19 +566,13 @@ Static Function getEmpName( cUniFat )
 	Local cEmp := ''
 
 	If cUniFat == '01'
-
 		cEmp := 'SOBEL'
-
-	ElseIf cUniFat == '02'
-		
+	ElseIf cUniFat == '02'		
 		cEmp := 'JMT'
 	ElseIf cUniFat == '04'	
-
 		cEmp := '3F'
-	Else
-	
+	Else	
 		cEmp := ''
-
 	EndIf	
 
 Return cEmp
