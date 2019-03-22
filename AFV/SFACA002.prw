@@ -27,17 +27,17 @@ User Function SFACA002()
 
 		aReg := findNewCli()
 
-	closeEnv() 
+	closeEnv() // Desmonta ambiente
 
 	//Conta número de novos registros em T_CLIENTENOVO_SOBEL 
-	nCount := Len(aReg[1])
+	nCount := Len( aReg[ 1 ] )
 
 	If nCount > 0
 		For nX := 1 to nCount	
 			// recebe PK da T_CLIENTENOVO_SOBEL
-        	nSeq     := Val(aReg[1][nX])			
+        	nSeq     := Val( aReg[ 1, nX ] )			
 			// recebe unidade de faturamento - 01 - SOBEL | 02 - JMT | 04 - 3F
-			cUnidFat := cValToChar(aReg[2][nX])
+			cUnidFat := cValToChar( aReg[ 2, nX ] )
 
 			// prepara o ambiente de acordo com a empresa
 			prepEnv( cUnidFat )	
@@ -63,6 +63,8 @@ Return Nil
 @author  Ademilson Nunes
 @since   16/03/2019
 @version 12.1.17
+@param cCNPJ, caracter, CNPJ do cliente - apenas números
+@param cA1Cod, caracter, A1_COD do registro
 /*/
 //-------------------------------------------------------------------
 Static Function setA1Cod( cCNPJ, cA1Cod )
@@ -82,10 +84,12 @@ Return Nil
 
 //-------------------------------------------------------------------
 /*/{Protheus.doc} getA1Cod
-description
+	Retorna A1_COD, apartir do CNPJ do Cliente
 @author  Ademilson Nunes
 @since   18/03/2019
 @version 12.1.17
+@param cCNPJ, caracter, CNPJ do cliente - apenas números
+@return cResult, caracter, retorna A1_COD do registro
 /*/
 //-------------------------------------------------------------------
 Static Function getA1Cod( cCNPJ )
@@ -103,20 +107,20 @@ Static Function getA1Cod( cCNPJ )
 
 	EndSQL
 
-	While !AFV->(EoF())
-		cResult := AllTrim(cValtoChar( AFV->A1_COD ))
-		AFV->(DbSkip())
+	While !AFV->( EoF() )
+		cResult := AllTrim( cValtoChar( AFV->A1_COD ) )
+		AFV->( DbSkip() )
 	End
 
-	AFV->(DbCloseArea())
-	RestArea(aArea)	  
+	AFV->( DbCloseArea() )
+	RestArea( aArea )	  
 
 Return cResult
 
 
 //-------------------------------------------------------------------
 /*/{Protheus.doc} prepEnv
-description
+	Prepara o ambiente (empresa) onde a rotina será executada
 @author  Ademilson Nunes
 @since   15/03/2019
 @version 12.1.17
@@ -125,7 +129,7 @@ description
 //-------------------------------------------------------------------
 Static Function prepEnv( cEmp )
 
-	RpcSetType(3) 
+	RpcSetType( 3 ) 
 	RpcSetEnv( cEmp, cFil, cUser, cPsw, "FAT", "", aTables, , , ,  )
 
 Return Nil
@@ -133,7 +137,7 @@ Return Nil
 
 //-------------------------------------------------------------------
 /*/{Protheus.doc} closeEnv
-description
+	Desmonta o ambiente 
 @author  Ademilson Nunes 
 @since   15/03/2019
 @version 12.1.17
@@ -147,13 +151,13 @@ Return Nil
 
 
 /*/{Protheus.doc} findNewCli
-    (long_description
+		Retorna uma coleção de dados em um array contendo ID e CODIGOUNIDFAT dos novos registros
     @type  Static Function
     @author  Ademilson Nunes / Elvis Kinuta
     @since date
     @version version   
-    @return return, return_type, return_description
-    /*/
+    @return aResult, array, retorna uma coleção de dados com ID do registro e CODIGOUNIDFAT
+/*/
 Static Function findNewCli()
 
 	Local aArea   := GetArea()
@@ -173,19 +177,19 @@ Static Function findNewCli()
 
 	EndSQL
 
-	While !(AFV->(EoF()))
+	While !AFV->( EoF() )
 		// PK  T_CLIENTENOVO_SOBEL
-		AAdd( aReg, AllTrim(cValToChar(AFV->SEQUENCIA)) ) 
+		AAdd( aReg, AllTrim( cValToChar( AFV->SEQUENCIA ) ) ) 
 		// CODIGOUNIDFAT - 01 - SOBEL | 02 - JMT | 04 - 3F
-		AAdd( aEmp, AllTrim(AFV->CODIGOUNIDFAT) )
+		AAdd( aEmp, AllTrim( AFV->CODIGOUNIDFAT ) )
 		AFV->(DbSkip())
 	End
 
 	AAdd( aResult, aReg )
 	AAdd( aResult, aEmp )
 
-	AFV->(DbCloseArea())
-	RestArea(aArea)	    
+	AFV->( DbCloseArea() )
+	RestArea( aArea )	    
 
 Return aResult
 
@@ -230,7 +234,7 @@ Static Function getNewCli( nSeq )
 				
     EndSQL
 
-    While !(AFV->(EoF()))
+    While !( AFV->( EoF() ) )
 
         aResult :={{"A1_LOJA"    ,'01'                   ,Nil},;
 	               {"A1_NOME"    ,AFV->RAZAOSOCIAL       ,Nil},;
@@ -262,11 +266,11 @@ Static Function getNewCli( nSeq )
 	               {"A1_TEL"     ,AFV->TELEFONE			 ,Nil},;
 	               {"A1_ZZBOL"   ,"N"					 ,Nil}} 
 
-			AFV->(DbSkip())		
+			AFV->( DbSkip() )		
     End
 
-	AFV->(DbCloseArea())
-	RestArea(aArea)		
+	AFV->( DbCloseArea() )
+	RestArea( aArea )		
 
 Return aResult
 
@@ -302,9 +306,9 @@ Static Function recSA1( aResult, cUniFat, nSeq  )
 		If ! lMsErroAuto
 			ConfirmSx8()	
 			// Recebe cnpj do cliente em sua posição dentro do array (Linha 14 - Coluna 02)
-			cCNPJ   := cValToChar(aResult[14][2])	
+			cCNPJ   := cValToChar( aResult[ 14, 2 ] )	
 			// Grava A1_COD do registro na tabela T_CLIENTENOVO_SOBEL
-			setA1Cod( cCNPJ, getA1Cod(cCNPJ) )						
+			setA1Cod( cCNPJ, getA1Cod( cCNPJ ) )						
 			//Enviar e-mail
 			u_FBEMail( cEmailFin, 'Novo Cliente cadastrado', mountMsg( aResult, cUniFat ))
 		Else
@@ -312,30 +316,30 @@ Static Function recSA1( aResult, cUniFat, nSeq  )
 			//MostraErro()
              
 			// Cria arquivo de Log 
-			oLog   := FCreate(cFileLog)
+			oLog   := FCreate( cFileLog )
 			// recebe array com erros durante a tentativa de execução da MATA030 
 			aError := GetAutoGRLog()
 
-			cRet   := 'LOG	- ' + DtoC(dDataBase) + " " + Time() + Chr(13) + Chr(10) 
-			cRet   += 'ERRO - EMPRESA -' + cUniFat + Chr(13) + Chr(10)	
+			cRet   := 'LOG	- ' + DtoC( dDataBase ) + " " + Time() + Chr( 13 ) + Chr( 10 ) 
+			cRet   += 'ERRO - EMPRESA -' + cUniFat + Chr( 13 ) + Chr( 10 )	
 
-			cRetHtml :=	'LOG	- ' + DtoC(dDataBase) + " " + Time() + "<br>"
+			cRetHtml :=	'LOG	- ' + DtoC( dDataBase ) + " " + Time() + "<br>"
 			cRetHtml += 'ERRO - EMPRESA -' + cUniFat + "<br>"
 
 			// Desmonta array de erros linha a linha em uma string
-            For nX := 1 To Len(aError) 
-                cRet     += aError[nX] + Chr(13) + Chr(10)
-				cRetHtml +=	aError[nX] + '<br>'		
+            For nX := 1 To Len( aError ) 
+                cRet     += aError[ nX ] + Chr( 13 ) + Chr( 10 )
+				cRetHtml +=	aError[ nX ] + '<br>'		
             Next nX
 
 			/* Escreve log de erros */ 
-			FWrite(oLog,  cRet)	
+			FWrite( oLog,  cRet )	
 
 			/* Envia e-mail de log para o TI */ 			
 			//Verifica se MSGIMPORTACAO do registro está NULL
 			If getMSGCli( nSeq ) == '' 
 				// retorna motido do erro recebido via GetAutoGRLog()
-				cErroMsg := AllTrim( cValToChar(aError[1]) )
+				cErroMsg := AllTrim( cValToChar( aError[ 1 ] ) )
 				// grava motivo do erro em MSGIMPORTACAO
 				setMSGCli( nSeq,  cErroMsg ) 
 				// Envia e-mail com conteúdo do log
@@ -394,12 +398,12 @@ Static Function getMSGCli( nSeq )
 	While !AFV->(EoF())
 
 		cResult := AllTrim( AFV->MSGIMP )
-		AFV->(DbSkip())
+		AFV->( DbSkip() )
 
 	End
 
-	AFV->(DbCloseArea())
-	RestArea(aArea)	  
+	AFV->( DbCloseArea() )
+	RestArea( aArea )	  
 
 Return cResult
 
@@ -419,7 +423,7 @@ Static Function getNomeVen( cCodVen )
 	Local aArea   := GetArea()
 	Local cResult := ''
 
-	cCodVen := AllTrim(cCodVen)
+	cCodVen := AllTrim( cCodVen )
 
 	BeginSQL Alias 'TBL'
 
@@ -431,15 +435,15 @@ Static Function getNomeVen( cCodVen )
 
 	EndSQL
 
-	While !TBL->(EoF())
+	While !TBL->( EoF() )
 
-		cResult := AllTrim(cValtoChar( TBL->A3_NOME ))
-		TBL->(DbSkip())
+		cResult := AllTrim( cValtoChar( TBL->A3_NOME ) )
+		TBL->( DbSkip() )
 
 	End
 
-	TBL->(DbCloseArea())
-	RestArea(aArea)	  
+	TBL->( DbCloseArea() )
+	RestArea( aArea )	  
 
 Return cResult
 
@@ -456,28 +460,28 @@ Return cResult
 Static Function mountMsg( aResult, cUniFat )
 	
 	Local cMsg      := ''
-	Local cEmp      := getEmpName(cUniFat)	
-	Local cCNPJ     := cValtoChar(aResult[14][02])
+	Local cEmp      := getEmpName( cUniFat ) 	
+	Local cCNPJ     := cValtoChar( aResult[ 14, 02 ] )
 	Local cCodSA1   := getA1Cod(cCNPJ)
-    Local cCodVen   := cValToChar(aResult[19][02])
-	Local cNomeVen  := getNomeVen(cCodVen)
-	Local cRzSocial := cValToChar(aResult[02][02])
-	Local cNomeRed  := cValToChar(aResult[05][02])
-	Local cIE       := cValToChar(aResult[16][02])
-	Local cEnder    := cValToChar(aResult[07][02])
-	Local cUF       := cValToChar(aResult[08][02])
-	Local cCidade   := cValToChar(aResult[10][02])
-	Local cBairro   := cValToChar(aResult[11][02])
-	Local cCep      := cValToChar(aResult[12][02])
-	Local cEmail    := cValToChar(aResult[17][02])
-	Local cTel      := cValToChar(aResult[26][02]) + " " + cValToChar(aResult[28][02])        
+    Local cCodVen   := cValToChar( aResult[ 19, 02 ] )
+	Local cNomeVen  := getNomeVen( cCodVen ) 
+	Local cRzSocial := cValToChar( aResult[ 02, 02 ] )
+	Local cNomeRed  := cValToChar( aResult[ 05, 02 ] )
+	Local cIE       := cValToChar( aResult[ 16, 02 ] )
+	Local cEnder    := cValToChar( aResult[ 07, 02 ] )
+	Local cUF       := cValToChar( aResult[ 08, 02 ] )
+	Local cCidade   := cValToChar( aResult[ 10, 02 ] )
+	Local cBairro   := cValToChar( aResult[ 11, 02 ] )
+	Local cCep      := cValToChar( aResult[ 12, 02 ] )
+	Local cEmail    := cValToChar( aResult[ 17, 02 ] )
+	Local cTel      := cValToChar( aResult[ 26, 02 ] ) + " " + cValToChar( aResult[ 28, 02 ] )        
 
 	cMsg := '<!DOCTYPE html>'
 	cMsg += '<html>'
 	cMsg += '<head>'
-	cMsg += '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">'
-	cMsg += '<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>'
-	cMsg += '<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>'
+	cMsg += '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">'
+	cMsg += '<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>'
+	cMsg += '<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>'
 	cMsg += '<title>Relatorio</title>'
     cMsg += '</head>'
 	cMsg += '<body>'

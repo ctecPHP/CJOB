@@ -554,16 +554,15 @@ Return cResult
 	@param cC5PedBon, caracter, valor a ser gravado no campo C5_PEDBON
     /*/
 Static Function setC5PedBon( cC5Num, cC5PedBon )
-    Local aArea := GetArea()
-    Local cLoja := '01'
+    Local aArea := GetArea()   
 
     DbSelectArea("SC5")
     DbSetOrder(1)
-    If DbSeek( xFilial('SC5') + cC5Num + cLoja )
+    If DbSeek( xFilial('SC5') + cC5Num )
         Begin Transaction 	
             RecLock("SC5", .F.)		
             SC5->C5_PEDBON := cC5PedBon		
-            MsUnLock() 
+            SC5->MsUnLock() 
         End Transaction
     EndIf
 
