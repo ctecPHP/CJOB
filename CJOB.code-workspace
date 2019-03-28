@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "C:\\xampp\\htdocs\\AFVCadCli"
 		}
 	],
 	"settings": {
