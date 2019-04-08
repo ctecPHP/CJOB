@@ -1,9 +1,9 @@
 <?php
 
-    define('DB_HOST'        , "192.168.0.4");
+    define('DB_HOST'        , "DESKTOP-0DD5KKR\SQLSERVER");
     define('DB_USER'        , "sa");
-    define('DB_PASSWORD'    , "S0b3l2036");
-    define('DB_NAME'        , "Protheus_Teste12");
+    define('DB_PASSWORD'    , "adeade4522");
+    define('DB_NAME'        , "P12");
     define('DB_DRIVER'      , "sqlsrv");
    
     require_once "Class/Conexao.php";
@@ -13,7 +13,10 @@
    
         $Conexao    = Conexao::getConnection();
 
-        $sql  = "SELECT E4_CODIGO, E4_DESCRI FROM SE4010 WHERE E4_TIPO = '1' AND E4_CODIGO <> '093' AND D_E_L_E_T_ = '' ";
+        $sql  = "SELECT E4_CODIGO, E4_DESCRI ";
+        $sql .= "FROM SE4010 WHERE E4_TIPO = '1' ";
+        $sql .= "AND E4_CODIGO <> '093' ";
+        $sql .= "AND D_E_L_E_T_ = '' " ;
 
         $query       = $Conexao->query($sql);
         $condPgtos   = $query->fetchAll();
@@ -36,18 +39,18 @@
 
     <title>Cadastro de Clientes</title>
     <link rel="shortcut icon" href="favicon.ico" />
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>   
     <script type="text/javascript" src="./js/getEndFaturamento.js"></script>
     <link href="./css/afv.css" rel="stylesheet"/>
-    <script type="text/javascript" src="./js/afv.js"></script>
-
 
      <!-- Libs customizadas -->
     <script type="text/javascript" src="./js/sintegra.js"></script>
     <script type="text/javascript" src="./js/getVend.js"></script>
 
     <script type="text/javascript" src="./js/copyEndFat.js"></script> 
-    <script src="./js/jquery.maskedinput-1.1.4.pack.js" type="text/javascript"></script>   
+    <script src="./js/jquery.maskedinput-1.1.4.pack.js" type="text/javascript"></script>
+    <!--<script src="./js/jquery.markMoney.js" type="text/javascript"></script>    -->
+
     <link rel="canonical" href="https://getbootstrap.com/docs/4.3/examples/navbar-fixed/">
 
         <!-- blueimp Gallery styles -->
@@ -67,27 +70,13 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,300,500,700" />
 
-    <link rel="apple-touch-icon" sizes="57x57" href="/AFVWeb/Content/Images/favicon/apple-icon-57x57.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="/AFVWeb/Content/Images/favicon/apple-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="/AFVWeb/Content/Images/favicon/apple-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="/AFVWeb/Content/Images/favicon/apple-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="/AFVWeb/Content/Images/favicon/apple-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="/AFVWeb/Content/Images/favicon/apple-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="/AFVWeb/Content/Images/favicon/apple-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/AFVWeb/Content/Images/favicon/apple-icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/AFVWeb/Content/Images/favicon/apple-icon-180x180.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/AFVWeb/Content/Images/favicon/android-icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/AFVWeb/Content/Images/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="/AFVWeb/Content/Images/favicon/favicon-96x96.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/AFVWeb/Content/Images/favicon/favicon-16x16.png">
-
-<!--
+  <!--
     <script type="text/javascript">
         $("#limitecred").maskMoney({symbol:'R$ ', thousands:'.', decimal:',', symbolStay: true});
     </script>
--->
+   -->
 
-   <script type="text/javascript">
+ <script type="text/javascript">
 	$(document).ready(function(){
 
         /*Desliga campos*/
@@ -98,7 +87,7 @@
         /* Formata mascara CNPJ */
         $("#cnpj").mask("99.999.999/9999-99");        
 	});
-    </script>
+</script>
 
     <style>
       .bd-placeholder-img {
@@ -115,13 +104,7 @@
           font-size: 3.5rem;
         }
       }       
-        /*Upload de arquivos*/
-      .table-dark  {
-        font-family: "open sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-        background-color: #2f4050;
-        font-size: 13px;
-        color: #676a6c;
-}
+    }
     </style>  
   </head>
   <body class="top-navigation">
@@ -206,6 +189,7 @@
 
     <p class="lead"> 
     <h3>Identificação do Vendedor</h3>
+    <form id="fileupload" action="controller/fileupload.php" method="POST" enctype="multipart/form-data">
         <div class="row">
             <div class="col-sm-3">
                 <div class="form-group">
@@ -233,10 +217,7 @@
                     <div class="col-sm-3">
                             <div class="form-group">
                                     <label for="">CNPJ*</label>
-                                    <input type="text" class="form-control" id="cnpj" readonly="readonly">
-                                    <div class="form-group">                            
-                                     <p align="right"><button type="button" class="btn btn-primary" onclick="getSintegra()">Buscar</button></p>          
-                        </div>                                                             
+                                    <input type="text" class="form-control" id="cnpj" readonly="readonly">                                                                                               
                             </div> 
                     </div>
                     <div class="col-sm-2">
@@ -492,7 +473,7 @@
             <div class="row">
                     <div class="col-sm">&nbsp;</div>
             </div>
-            <h3>Endereço de Entrega</h3>
+            <h3>Dados Logística</h3>
             <div class="row">
                 <div class="col-sm-2">
                     <div class="form-group">
@@ -540,58 +521,46 @@
                                 </div>        
                         </div>
                 </div>
-                <div class="row">
-                <div class="col-sm-10">
-                <h3>Anexar Documentos</h3>
-                <p class="lead">
-                <div class="form-group">
-                                  
-                <form id="fileupload" action="https://jquery-file-upload.appspot.com/" method="POST" enctype="multipart/form-data" class="">
-        <!-- Redirect browsers with JavaScript disabled to the origin page -->
-        <noscript><input type="hidden" name="redirect" value="https://blueimp.github.io/jQuery-File-Upload/"></noscript>
-        <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
-        <div class="row">
-            <div class="col-lg-7">
-                <!-- The fileinput-button span is used to style the file input field as button -->
-                <span class="btn btn-success fileinput-button">
-                    <i class="glyphicon glyphicon-plus"></i>
-                    <span>Add files...</span>
-                    <input type="file" name="files[]" multiple="">
-                </span>
-                <button type="submit" class="btn btn-primary start">
-                    <i class="glyphicon glyphicon-upload"></i>
-                    <span>Start upload</span>
-                </button>
-                <button type="reset" class="btn btn-warning cancel">
-                    <i class="glyphicon glyphicon-ban-circle"></i>
-                    <span>Cancel upload</span>
-                </button>
-                <button type="button" class="btn btn-danger delete">
-                    <i class="glyphicon glyphicon-trash"></i>
-                    <span>Delete</span>
-                </button>
-                <input type="checkbox" class="toggle">
-                <!-- The global file processing state -->
-                <span class="fileupload-process"></span>
-            </div>
-            <!-- The global progress state -->
-            <div class="col-lg-5 fileupload-progress fade">
-                <!-- The global progress bar -->
-                <div class="progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-                    <div class="progress-bar-success" style="width:0%;"></div>
+
+                <div class="row fileupload-buttonbar">
+                <div class="col-sm-6">
+                    <!-- The fileinput-button span is used to style the file input field as button -->
+                    <span class="btn btn-success fileinput-button">
+                        <i class="glyphicon glyphicon-plus"></i>
+                        <span>Add files...</span>
+                        <input type="file" name="files[]" multiple>           
+                        <input type="hidden" class="form-control" name="path" id="path" placeholder="" value="">
+                        
+                    </span>
+                    <button type="submit" class="btn btn-primary start">                        
+                        <span>Iniciar Upload</span>
+                    </button>
+                    <button type="reset" class="btn btn-warning cancel">                       
+                        <span>Cancelar upload</span>
+                    </button>            
+                    <button type="button" class="btn btn-danger delete">                       
+                        <span>Delete</span>
+                    </button>
+                    <input type="checkbox" class="toggle">
+                    <!-- The global file processing state -->
+                    <span class="fileupload-process"></span>
                 </div>
-                <!-- The extended global progress state -->
-                <div class="progress-extended">&nbsp;</div>
+                <!-- The global progress state -->
+                <div class="col-lg-5 fileupload-progress fade">
+                    <!-- The global progress bar -->
+                    <div class="progress progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar progress-bar-success" style="width:0%;"></div>
+                    </div>
+                    <!-- The extended global progress state -->
+                    <div class="progress-extended">&nbsp;</div>
+                </div>
             </div>
-        </div>
-        <!-- The table listing the files available for upload/download -->
-        <table role="presentation" class=""><tbody class="files"></tbody></table>
-    </form>                        </div>
-        </div>
-                        </p>
-                </div>                              
-    </p>
-  </div>
+            <!-- The table listing the files available for upload/download -->
+            <table role="presentation" class="table table-striped"><tbody class="files"></tbody></table>
+
+</form>
+
+               
 </main>
 <!-- Modal -->
 <div class="modal fade" id="Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
@@ -621,7 +590,8 @@
                 </div>
             </div>
             
-            <!-- The template to display files available for upload -->
+            
+<!-- The template to display files available for upload -->
 <script id="template-upload" type="text/x-tmpl">
 {% for (var i=0, file; file=o.files[i]; i++) { %}
     <tr class="template-upload fade">
@@ -630,18 +600,22 @@
         </td>
         <td>
             <p class="name">{%=file.name%}</p>
-            <strong class="error"></strong>
+            <strong class="error text-danger"></strong>
         </td>
         <td>
             <p class="size">Processing...</p>
-            <div class="progress"></div>
+            <div class="progress progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-bar progress-bar-success" style="width:0%;"></div></div>
         </td>
         <td>
             {% if (!i && !o.options.autoUpload) { %}
-                <button class="start" disabled>Start</button>
+                <button class="btn btn-primary start" disabled>                
+                    <span>Iniciar</span>
+                </button>
             {% } %}
             {% if (!i) { %}
-                <button class="cancel">Cancel</button>
+                <button class="btn btn-warning cancel">                   
+                    <span>Cancelar</span>
+                </button>
             {% } %}
         </td>
     </tr>
@@ -660,29 +634,47 @@
         </td>
         <td>
             <p class="name">
-                <a href="{%=file.url%}" title="{%=file.name%}" download="{%=file.name%}" {%=file.thumbnailUrl?'data-gallery':''%}>{%=file.name%}</a>
+                {% if (file.url) { %}
+                    <a href="{%=file.url%}" title="{%=file.name%}" download="{%=file.name%}" {%=file.thumbnailUrl?'data-gallery':''%}>{%=file.name%}</a>
+                {% } else { %}
+                    <span>{%=file.name%}</span>
+                {% } %}
             </p>
             {% if (file.error) { %}
-                <div><span class="error">Error</span> {%=file.error%}</div>
+                <div><span class="label label-danger">Error</span> {%=file.error%}</div>
             {% } %}
         </td>
         <td>
             <span class="size">{%=o.formatFileSize(file.size)%}</span>
         </td>
         <td>
-            <button class="delete" data-type="{%=file.deleteType%}" data-url="{%=file.deleteUrl%}"{% if (file.deleteWithCredentials) { %} data-xhr-fields='{"withCredentials":true}'{% } %}>Delete</button>
-            <input type="checkbox" name="delete" value="1" class="toggle">
+            {% if (file.deleteUrl) { %}
+                <button class="btn btn-danger delete" data-type="{%=file.deleteType%}" data-url="{%=file.deleteUrl%}"{% if (file.deleteWithCredentials) { %} data-xhr-fields='{"withCredentials":true}'{% } %}>
+                    <i class="glyphicon glyphicon-trash"></i>
+                    <span>Delete</span>
+                </button>
+                <input type="checkbox" name="delete" value="1" class="toggle">
+            {% } else { %}
+                <button class="btn btn-warning cancel">
+                    <i class="glyphicon glyphicon-ban-circle"></i>
+                    <span>Cancel</span>
+                </button>
+            {% } %}
         </td>
     </tr>
 {% } %}
 </script>
-
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js" integrity="sha384-xBuQ/xzmlsLoJpyjoggmTEz8OWUFM0/RC5BsqQBDX2v5cMvDHcMakNTNrHIW2I5f" crossorigin="anonymous"></script> -->
+<!-- The jQuery UI widget factory, can be omitted if jQuery UI is already included -->
+<script src="./js/vendor/jquery.ui.widget.js"></script>
 <!-- The Templates plugin is included to render the upload/download listings -->
 <script src="https://blueimp.github.io/JavaScript-Templates/js/tmpl.min.js"></script>
 <!-- The Load Image plugin is included for the preview images and image resizing functionality -->
 <script src="https://blueimp.github.io/JavaScript-Load-Image/js/load-image.all.min.js"></script>
 <!-- The Canvas to Blob plugin is included for image resizing functionality -->
 <script src="https://blueimp.github.io/JavaScript-Canvas-to-Blob/js/canvas-to-blob.min.js"></script>
+<!-- Bootstrap JS is not required, but included for the responsive demo navigation -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 <!-- blueimp Gallery script -->
 <script src="https://blueimp.github.io/Gallery/js/jquery.blueimp-gallery.min.js"></script>
 <!-- The Iframe Transport is required for browsers without support for XHR file uploads -->
@@ -701,26 +693,12 @@
 <script src="./js/jquery.fileupload-validate.js"></script>
 <!-- The File Upload user interface plugin -->
 <script src="./js/jquery.fileupload-ui.js"></script>
-<!-- The File Upload jQuery UI plugin -->
-<script src="./js/jquery.fileupload-jquery-ui.js"></script>
 <!-- The main application script -->
 <script src="./js/main.js"></script>
-<script>
-// Initialize the jQuery UI theme switcher:
-$('#theme-switcher').change(function () {
-    var theme = $('#theme');
-    theme.prop(
-        'href',
-        theme.prop('href').replace(
-            /[\w\-]+\/jquery-ui.css/,
-            $(this).val() + './css/jquery-ui.css'
-        )
-    );
-});
-</script>
+<script src="./js/application.js"></script>
 <!-- The XDomainRequest Transport is included for cross-domain file deletion for IE 8 and IE 9 -->
 <!--[if (gte IE 8)&(lt IE 10)]>
-<script src="./js/cors/jquery.xdr-transport.js"></script>
-<![endif]-->
+<script src="js/cors/jquery.xdr-transport.js"></script>
+<![endif]-->            
 </body>
 </html>

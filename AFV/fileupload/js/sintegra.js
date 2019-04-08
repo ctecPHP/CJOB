@@ -1,67 +1,68 @@
 
-/**/
-getSintegra()
-{
-  var token = "F9FC2E73-CA5C-46DB-8639-C814EA0F8442";
-  var cnpj = $("#cnpj").val().replace(/[^\d]+/g,'');
-  var plugin = "ST";
+$(document).ready(function() {
 
-  limpaCampos () //Limpa dados do formulário para nova consulta
-   
-  if (valida_cnpj(cnpj)) 
-  {          
-    $.ajax({       
-      url: "https://sintegraws.com.br/api/v1/execute-api.php?token="+token+"&cnpj="+cnpj+"&plugin="+ plugin,
-      method:'GET',
-      complete: function(xhr){
-    
-        // Aqui recuperamos o JSON retornado
-        response = xhr.responseJSON;
-        
-        if(response.status == 'OK') {
-        
-          // Agora preenchemos os campos com os valores retornados
-          $('#razaosocial').val(response.nome_empresarial);  
-          $('#fantasia').val(response.nome_fantasia);  
-          $('#enderecofat').val(response.logradouro); 
-          $('#inscricao').val(response.inscricao_estadual); 
-          $('#cepfat').val(response.cep);
-          $('#complefat').val(response.complemento);
-          $('#cidadefat').val(response.municipio);    
-          $('#estadofat').val(response.uf);
-          $('#bairrofat').val(response.bairro); 
-          $('#numerofat').val(response.numero);
+    $("#cnpj").blur(function() { 
+        var token = "F9FC2E73-CA5C-46DB-8639-C814EA0F8442";
+        var cnpj = $("#cnpj").val().replace(/[^\d]+/g,'');
+        var plugin = "ST";
 
-          $('#cnae').val(response.cnae_principal.code);
-          $('#atividade').val(response.cnae_principal.text);
-          $('#data_inicio_atividade').val(response.data_inicio_atividade);
-          $('#regime_tributacao').val(response.regime_tributacao);
-
-          $('#situacao_cnpj').val(response.situacao_cnpj);
-          $('#situacao_ie').val(response.situacao_ie);
+        limpaCampos () //Limpa dados do formulário para nova consulta
+         
+        if (valida_cnpj(cnpj)) 
+        {          
+          $.ajax({       
+            url: "https://sintegraws.com.br/api/v1/execute-api.php?token="+token+"&cnpj="+cnpj+"&plugin="+ plugin,
+            method:'GET',
+            complete: function(xhr){
           
-          //buscar código ibge aqui
-           //Consulta o webservice viacep.com.br/
-           getIBGE();
-           return false;
+              // Aqui recuperamos o JSON retornado
+              response = xhr.responseJSON;
+              
+              if(response.status == 'OK') {
+              
+                // Agora preenchemos os campos com os valores retornados
+                $('#razaosocial').val(response.nome_empresarial);  
+                $('#fantasia').val(response.nome_fantasia);  
+                $('#enderecofat').val(response.logradouro); 
+                $('#inscricao').val(response.inscricao_estadual); 
+                $('#cepfat').val(response.cep);
+                $('#complefat').val(response.complemento);
+                $('#cidadefat').val(response.municipio);    
+                $('#estadofat').val(response.uf);
+                $('#bairrofat').val(response.bairro); 
+                $('#numerofat').val(response.numero);
 
-        } else {
-          $('#cnpj').focus().val($('#cnpj').val());
-          $("#cnpj").val("CNPJ-Inválido");     
-        }
-      }
-    });
-  }else{
-      $('#Modal').modal('show');
-      $("#erro").replaceWith("<h4>CNPJ Inválido</h4>");           
-      $('#cnpj').focus().val($('#cnpj').val());
+                $('#cnae').val(response.cnae_principal.code);
+                $('#atividade').val(response.cnae_principal.text);
+                $('#data_inicio_atividade').val(response.data_inicio_atividade);
+                $('#regime_tributacao').val(response.regime_tributacao);
 
-  } 
-}
-   
+                $('#situacao_cnpj').val(response.situacao_cnpj);
+                $('#situacao_ie').val(response.situacao_ie);
+                
+                //buscar código ibge aqui
+                 //Consulta o webservice viacep.com.br/
+                 getIBGE();               
 
+                 $('#path').val($('#afvUser').val() + '/' + cnpj + '/')
+                 return false;
+
+              } else {
+                $('#cnpj').focus().val($('#cnpj').val());
+                $("#cnpj").val("CNPJ-Inválido");     
+              }
+            }
+          });
+        }else{
+            $('#Modal').modal('show');
+            $("#erro").replaceWith("<h4>CNPJ Inválido</h4>");           
+            $('#cnpj').focus().val($('#cnpj').val());
+    
+        } 
         
-/***/
+    });                  
+});
+
 function getIBGE() {
   var cep = $('#cepfat').val();
   $.getJSON("https://viacep.com.br/ws/" + cep + "/json/?callback=?", function (dados) {

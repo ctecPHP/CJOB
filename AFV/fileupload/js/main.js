@@ -18,7 +18,7 @@ $(function () {
     $('#fileupload').fileupload({
         // Uncomment the following to send cross-domain cookies:
         //xhrFields: {withCredentials: true},
-        url: 'server/php/'
+        url: './controller/fileupload.php'
     });
 
     // Enable iframe cross-domain access via redirect option:
@@ -41,7 +41,7 @@ $(function () {
             disableImageResize: /Android(?!.*Chrome)|Opera/
                 .test(window.navigator.userAgent),
             maxFileSize: 999000,
-            acceptFileTypes: /(\.|\/)(gif|jpe?g|png|doc|docx|xls|xlsx|txt|zip|rar|pdf)$/i
+            acceptFileTypes: /(\.|\/)(gif|jpe?g|png|xls|xlsx|doc|docx|pdf|txt|rar|zip)$/i
         });
         // Upload server status check for browsers with CORS support:
         if ($.support.cors) {

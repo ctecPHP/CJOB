@@ -193,6 +193,7 @@ Static Function getEmpName( cUniFat )
 	ElseIf cUniFat == '02'
 		
 		cEmp := 'JMT'
+		
 	ElseIf cUniFat == '04'	
 
 		cEmp := '3F'

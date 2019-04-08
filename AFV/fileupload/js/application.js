@@ -11,7 +11,7 @@ $('#fileupload').bind('fileuploadsend', function (e, data) {
         data.formData.push(progressObj);
         // Start the progress polling:
         data.context.data('interval', setInterval(function () {
-            $.get('/server/php/progress.php', $.param([progressObj]), function (result) {
+            $.get('./controller/progress.php', $.param([progressObj]), function (result) {
                 // Trigger a fileupload progress event,
                 // using the result as progress data:
                 e = $.Event( 'progress', {bubbles: false, cancelable: true});

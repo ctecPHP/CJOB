@@ -19,7 +19,7 @@ $(document).ready(function(){
 
         $.ajax({
             type: 'POST',
-            url: 'get_vendedor.php', 
+            url: './controller/get_vendedor.php', 
             //data: $(this).serialize()
             data: {afvUser: codigoUsuario}
         })

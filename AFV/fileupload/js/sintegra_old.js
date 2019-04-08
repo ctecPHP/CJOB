@@ -1,6 +1,7 @@
 
 /**/
-getSintegra()
+
+function getSintegra()
 {
   var token = "F9FC2E73-CA5C-46DB-8639-C814EA0F8442";
   var cnpj = $("#cnpj").val().replace(/[^\d]+/g,'');
