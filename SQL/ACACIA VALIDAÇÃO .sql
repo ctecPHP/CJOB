@@ -1,12 +1,73 @@
+SELECT *
+FROM AFVServer_SOBEL_PRD.dbo.T$_USUARIO
+WHERE SENHA = '<CRIP>÷õº¼¶³µ¶'
+GO
+
+SELECT *
+FROM AFVServer_SOBEL_PRD.dbo.T$_USUARIO
+WHERE USUARIO = 'rp336.01'
+GO
+
+--SELECT *
+--FROM Protheus_Teste12.dbo.SA1020 
+--WHERE A1_CGC = '11161187000121'
+--GO
+
+
+SELECT *
+FROM T_CLIENTENOVO_SOBEL
+GO
+
+SELECT *
+FROM Protheus_Teste12.dbo.T_CLIENTENOVO_SOBEL
+GO
+
+/*
+FLAGUSO = 1 (ativo - aparece no tablet e na web)
+FLAGUSO = 0 (inativo - não aparece no tablet e na web)CODIGOSTATUSPROD = SEMPRE APARECE.. de acordo com as regras do ERP.. atualmente no caso de vcs:
+Se for 1 = Bloqueado para Venda
+Se for 2 = Liberado para Venda
+*/
+
+--UPDATE Protheus_Teste12.dbo.T_CLIENTENOVO_SOBEL
+--SET D_E_L_E_T_ = '*'
+--WHERE SEQUENCIA IN (34, 35, 36) 
+
+
 ------------------------------------------------------------------
 --Tabela Cabeçalho Pedido de Venda
 ------------------------------------------------------------------
-USE Protheus_Teste12
+USE Protheus_Producao
 GO
 SELECT CODIGOUNIDFAT, * 
 FROM T_PEDIDO_SOBEL
+WHERE NUMPEDIDOSOBEL = '098483'
 ORDER BY NUMPEDIDO DESC
 GO
+
+SELECT DATALIBERACAO, FLAGBLOQUEIOAFV, * 
+FROM AFVServer_SOBEL_PRD.dbo.T_PEDIDO
+ORDER BY NUMPEDIDO DESC
+GO
+
+/*
+SELECT NUMPEDIDO,
+	   A3_NOME AS NOMEVEND, 
+	   CODIGOUNIDFAT
+FROM T_PEDIDO_SOBEL
+INNER JOIN SA3020 SA3 ON SA3.A3_COD = CODIGOVENDEDORESP
+WHERE NUMPEDIDO >= 591
+ORDER BY CODIGOUNIDFAT
+GO
+*/
+
+
+SELECT *
+FROM T_PEDIDO_SOBEL 
+WHERE NUMPEDIDOAFV = '1554648556178'
+GO
+
+
 
 
 SELECT * FROM T_PEDIDOITEM_SOBEL
@@ -98,11 +159,11 @@ WHERE STATUS = 'P'
 
 
 /* Forçar workflow a enviar email novamente. */
---UPDATE AFVServer_SOBEL.dbo.T$_CONTROLEAPROVADOR 
---SET INICIONOTIFICACAO = NULL,
---	ULTIMANOTIFICACAO = NULL
---WHERE NUMPEDIDO = 434
---GO
+UPDATE AFVServer_SOBEL_PRD.dbo.T$_CONTROLEAPROVADOR 
+SET INICIONOTIFICACAO = NULL,
+	ULTIMANOTIFICACAO = NULL
+WHERE NUMPEDIDO = 1001
+GO
 
 
 ----------------------------------------------------
@@ -141,7 +202,7 @@ USE AFVServer_SOBEL
 GO
 EXEC P_EXECUTARSCRIPTIMPORT TE_TABELAPRECO
 GO
-/* TE = ERP | TR = RELACIONAMENTO | T_ = AFV | TC = ESTRUTURA | T$ = CONFIG. | TWF = WORKFLOW */
+/* TE = ERP | TR = RELACIONAMENTO | T_ = AFV | TC = ESTRUTURA | T$ = CONFIG. | TWF = WORKFLOW | V_ VIEW PROTHEUS */
 
 
 SELECT * FROM TE_TABELAPRECO
