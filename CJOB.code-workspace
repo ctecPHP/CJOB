@@ -5,14 +5,11 @@
 		},
 		{
 			"path": "C:\\xampp\\htdocs\\AFVCadCli"
-		},
-		{
-			"path": "C:\\xampp\\htdocs\\fileupload"
 		}
 	],
 	"settings": {
 		"git.ignoreLimitWarning": true,
 		"advpl.workspaceFolders": "c:\\Users\\administrator\\Documents\\TDS\\Workspace\\CJOB;",
-		"advpl.selectedEnvironment": "jobs"
+		"advpl.selectedEnvironment": "TESTE12"
 	}
 }
